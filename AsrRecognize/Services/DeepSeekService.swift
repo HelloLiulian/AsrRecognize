@@ -74,7 +74,7 @@ enum DeepSeekService {
             throw DeepSeekError.invalidResponse
         }
 
-        return parse(content: content)
+        return try parse(content: content)
     }
 
     private static func parse(content: String) throws -> MeetingSummary {

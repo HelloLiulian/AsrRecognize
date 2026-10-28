@@ -129,7 +129,7 @@ final class LiveTranscriber: ObservableObject {
             input.installTap(onBus: 0, bufferSize: 2048, format: format) { [weak self] buffer, _ in
                 guard let self, self.isRecording else { return }
                 self.recognitionRequest?.append(buffer)
-                try? self.audioFile?.write(buffer)
+                try? self.audioFile?.write(from: buffer)
                 self.captureLevel(from: buffer)
             }
             tapInstalled = true
