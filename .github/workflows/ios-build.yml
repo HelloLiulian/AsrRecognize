@@ -1,0 +1,98 @@
+name: Build AsrRecognize
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulator-app:
+    name: Simulator app for Appetize
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          uname -m
+
+      - name: Build arm64 simulator app
+        run: |
+          xcodebuild \
+            -project AsrRecognize.xcodeproj \
+            -scheme AsrRecognize \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/SimulatorBuild" \
+            ARCHS=arm64 \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package .app for Appetize
+        run: |
+          APP="$RUNNER_TEMP/SimulatorBuild/Build/Products/Debug-iphonesimulator/AsrRecognize.app"
+          if [ ! -d "$APP" ]; then
+            echo "App bundle not found: $APP"
+            exit 1
+          fi
+          ditto -c -k --sequesterRsrc --keepParent "$APP" "AsrRecognize-simulator.zip"
+
+      - name: Upload simulator artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AsrRecognize-simulator-appetize
+          path: AsrRecognize-simulator.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  unsigned-ipa:
+    name: Unsigned IPA for Sideloadly
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build device app without signing
+        run: |
+          xcodebuild \
+            -project AsrRecognize.xcodeproj \
+            -scheme AsrRecognize \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/DeviceBuild" \
+            ARCHS=arm64 \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package unsigned IPA
+        run: |
+          APP="$RUNNER_TEMP/DeviceBuild/Build/Products/Release-iphoneos/AsrRecognize.app"
+          if [ ! -d "$APP" ]; then
+            echo "App bundle not found: $APP"
+            exit 1
+          fi
+          rm -rf Payload AsrRecognize-unsigned.ipa
+          mkdir Payload
+          cp -R "$APP" Payload/
+          zip -qry AsrRecognize-unsigned.ipa Payload
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: AsrRecognize-unsigned-ipa
+          path: AsrRecognize-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14
