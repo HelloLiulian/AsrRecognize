@@ -33,7 +33,7 @@ else
   die "缺少 Hugging Face CLI。请先执行: python3 -m pip install -U huggingface_hub"
 fi
 
-note "下载模型仓库 $REPO（约 1GB，首次较慢）"
+note "下载模型仓库 ${REPO}（约 1GB，首次较慢）"
 if [[ "$DL_KIND" == "hf" ]]; then
   hf download "$REPO" --local-dir "$SRC"
   hf download "$TOKENIZER_REPO" --include vocab.json merges.txt tokenizer_config.json --local-dir "$TOK"
