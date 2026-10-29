@@ -4,3 +4,9 @@ DerivedData/
 build/
 *.xcuserstate
 __pycache__/
+
+# 本地模型（约 0.9GB），由 tools/prepare-model.sh 生成，不进仓库
+AsrRecognize/Resources/Qwen3ASR/*
+!AsrRecognize/Resources/Qwen3ASR/README.txt
+Payload/
+*.ipa

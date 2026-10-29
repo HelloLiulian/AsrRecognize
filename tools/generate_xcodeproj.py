@@ -12,7 +12,8 @@ APP_DIR = ROOT / "AsrRecognize"
 
 TARGET_NAME = "AsrRecognize"
 BUNDLE_ID = "com.liulian.AsrRecognize"
-DEPLOYMENT_TARGET = "17.0"
+DEPLOYMENT_TARGET = "18.0"
+SPEECH_SWIFT_URL = "https://github.com/soniqo/speech-swift"
 
 SAFE_VALUE = re.compile(r"^[A-Za-z0-9_./$+\-]+$")
 
@@ -62,6 +63,27 @@ def build() -> str:
         f"fileRef = {assets_ref} /* Assets.xcassets */; }};\n"
     )
 
+    # 蓝色文件夹引用：模型由 tools/prepare-model.sh 或 CI 填入同一目录
+    model_ref = gid("file-model-dir")
+    refs.append(
+        f"\t\t{model_ref} /* Qwen3ASR */ = {{isa = PBXFileReference; "
+        "lastKnownFileType = folder; path = Resources/Qwen3ASR; "
+        'sourceTree = "<group>"; };\n'
+    )
+    model_build = gid("build-model-dir")
+    build_files.append(
+        f"\t\t{model_build} /* Qwen3ASR in Resources */ = {{isa = PBXBuildFile; "
+        f"fileRef = {model_ref} /* Qwen3ASR */; }};\n"
+    )
+
+    package_ref = gid("package-speech-swift")
+    package_product = gid("product-qwen3asr")
+    package_build = gid("build-qwen3asr")
+    build_files.append(
+        f"\t\t{package_build} /* Qwen3ASR in Frameworks */ = {{isa = PBXBuildFile; "
+        f"productRef = {package_product} /* Qwen3ASR */; }};\n"
+    )
+
     subgroup_lines: list[str] = []
     for group_name in sorted(groups):
         child_lines: list[str] = []
@@ -106,6 +128,7 @@ def build() -> str:
     app_group_children = [
         f"\t\t\t\t{info_ref} /* Info.plist */,\n",
         f"\t\t\t\t{assets_ref} /* Assets.xcassets */,\n",
+        f"\t\t\t\t{model_ref} /* Qwen3ASR */,\n",
     ]
     for group_name in sorted(groups):
         app_group_children.append(
@@ -145,7 +168,7 @@ def build() -> str:
 \t\t\t\t\t"DEBUG=1",
 \t\t\t\t\t"$(inherited)",
 \t\t\t\t);
-\t\t\t\tIPHONEOS_DEPLOYMENT_TARGET = 17.0;
+\t\t\t\tIPHONEOS_DEPLOYMENT_TARGET = 18.0;
 \t\t\t\tLOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 \t\t\t\tMTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 \t\t\t\tMTL_FAST_MATH = YES;
@@ -168,7 +191,7 @@ def build() -> str:
 \t\t\t\tENABLE_USER_SCRIPT_SANDBOXING = YES;
 \t\t\t\tGCC_C_LANGUAGE_STANDARD = gnu17;
 \t\t\t\tGCC_NO_COMMON_BLOCKS = YES;
-\t\t\t\tIPHONEOS_DEPLOYMENT_TARGET = 17.0;
+\t\t\t\tIPHONEOS_DEPLOYMENT_TARGET = 18.0;
 \t\t\t\tLOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 \t\t\t\tMTL_ENABLE_DEBUG_INFO = NO;
 \t\t\t\tMTL_FAST_MATH = YES;
@@ -216,6 +239,7 @@ def build() -> str:
         "\t\t\tisa = PBXFrameworksBuildPhase;\n"
         "\t\t\tbuildActionMask = 2147483647;\n"
         "\t\t\tfiles = (\n"
+        f"\t\t\t\t{package_build} /* Qwen3ASR in Frameworks */,\n"
         "\t\t\t);\n"
         "\t\t\trunOnlyForDeploymentPostprocessing = 0;\n"
         "\t\t};\n"
@@ -305,6 +329,9 @@ def build() -> str:
         f"\t\t\tproductRefGroup = {products_group} /* Products */;\n"
         "\t\t\tprojectDirPath = \"\";\n"
         "\t\t\tprojectRoot = \"\";\n"
+        "\t\t\tpackageReferences = (\n"
+        f"\t\t\t\t{package_ref} /* XCRemoteSwiftPackageReference \"speech-swift\" */,\n"
+        "\t\t\t);\n"
         "\t\t\ttargets = (\n"
         f"\t\t\t\t{target_id} /* {TARGET_NAME} */,\n"
         "\t\t\t);\n"
@@ -319,6 +346,7 @@ def build() -> str:
         "\t\t\tbuildActionMask = 2147483647;\n"
         "\t\t\tfiles = (\n"
         f"\t\t\t\t{asset_build} /* Assets.xcassets in Resources */,\n"
+        f"\t\t\t\t{model_build} /* Qwen3ASR in Resources */,\n"
         "\t\t\t);\n"
         "\t\t\trunOnlyForDeploymentPostprocessing = 0;\n"
         "\t\t};\n"
@@ -384,7 +412,30 @@ def build() -> str:
         target_debug,
         target_release,
     )
-    content += "/* End XCConfigurationList section */\n"
+    content += "/* End XCConfigurationList section */\n\n"
+
+    content += "/* Begin XCRemoteSwiftPackageReference section */\n"
+    content += (
+        f"\t\t{package_ref} /* XCRemoteSwiftPackageReference \"speech-swift\" */ = {{\n"
+        "\t\t\tisa = XCRemoteSwiftPackageReference;\n"
+        f"\t\t\trepositoryURL = \"{SPEECH_SWIFT_URL}\";\n"
+        "\t\t\trequirement = {\n"
+        "\t\t\t\tbranch = main;\n"
+        "\t\t\t\tkind = branch;\n"
+        "\t\t\t};\n"
+        "\t\t};\n"
+    )
+    content += "/* End XCRemoteSwiftPackageReference section */\n\n"
+
+    content += "/* Begin XCSwiftPackageProductDependency section */\n"
+    content += (
+        f"\t\t{package_product} /* Qwen3ASR */ = {{\n"
+        "\t\t\tisa = XCSwiftPackageProductDependency;\n"
+        f"\t\t\tpackage = {package_ref} /* XCRemoteSwiftPackageReference \"speech-swift\" */;\n"
+        "\t\t\tproductName = Qwen3ASR;\n"
+        "\t\t};\n"
+    )
+    content += "/* End XCSwiftPackageProductDependency section */\n"
 
     content += "\t};\n"
     content += f"\trootObject = {project_id} /* Project object */;\n"

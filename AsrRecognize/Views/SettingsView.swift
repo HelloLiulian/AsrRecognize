@@ -217,6 +217,21 @@ struct SettingsView: View {
             SectionLabel(text: "语音识别")
 
             VStack(alignment: .leading, spacing: 14) {
+                Picker("识别引擎", selection: $settings.engine) {
+                    Text("系统语音").tag(ASREngine.apple)
+                    Text("本地 Qwen3").tag(ASREngine.qwen)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+
+                Text(engineDescription)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.textTertiary)
+                    .lineSpacing(3)
+
+                Divider()
+                    .overlay(Theme.stroke)
+
                 Text("识别语言")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(Theme.textPrimary)
@@ -250,6 +265,16 @@ struct SettingsView: View {
             }
             .glassCard()
         }
+    }
+
+    private var engineDescription: String {
+        if settings.engine == .qwen {
+            guard LocalModelAssets.isBundled else {
+                return "当前安装包未包含本地模型，录音时会提示并建议改用系统语音。"
+            }
+            return "完全离线，音频不出设备。模型约 0.9GB，首次加载约 1 分钟，仅支持 iOS 18 与真机。"
+        }
+        return "使用 Apple Speech，可按「仅设备端识别」开关切换离线与否。"
     }
 
     // MARK: - About

@@ -2,6 +2,11 @@ name: Build AsrRecognize
 
 on:
   workflow_dispatch:
+    inputs:
+      include_model:
+        description: "Device IPA 是否下载并打包约 0.9GB 的 Qwen3 模型"
+        type: boolean
+        default: true
   push:
     branches: [main]
 
@@ -12,7 +17,7 @@ jobs:
   simulator-app:
     name: Simulator app for Appetize
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,6 +26,19 @@ jobs:
         run: |
           xcodebuild -version
           uname -m
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/org.swift.swiftpm
+          key: spm-${{ runner.os }}-${{ hashFiles('AsrRecognize.xcodeproj/project.pbxproj') }}
+          restore-keys: spm-${{ runner.os }}-
+
+      - name: Resolve packages
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project AsrRecognize.xcodeproj \
+            -scheme AsrRecognize
 
       - name: Build arm64 simulator app
         run: |
@@ -45,6 +63,7 @@ jobs:
             echo "App bundle not found: $APP"
             exit 1
           fi
+          du -sh "$APP"
           ditto -c -k --sequesterRsrc --keepParent "$APP" "AsrRecognize-simulator.zip"
 
       - name: Upload simulator artifact
@@ -55,13 +74,40 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  unsigned-ipa:
-    name: Unsigned IPA for Sideloadly
+  offline-ipa:
+    name: Unsigned IPA with Qwen3 model
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 150
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          uname -m
+
+      - name: Install Hugging Face CLI
+        run: python3 -m pip install -U huggingface_hub
+
+      - name: Prepare Qwen3 CoreML model
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.include_model }}
+        run: |
+          bash tools/prepare-model.sh AsrRecognize/Resources/Qwen3ASR
+          find AsrRecognize/Resources/Qwen3ASR -maxdepth 1 -mindepth 1 -print
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/org.swift.swiftpm
+          key: spm-${{ runner.os }}-${{ hashFiles('AsrRecognize.xcodeproj/project.pbxproj') }}
+          restore-keys: spm-${{ runner.os }}-
+
+      - name: Resolve packages
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project AsrRecognize.xcodeproj \
+            -scheme AsrRecognize
 
       - name: Build device app without signing
         run: |
@@ -86,6 +132,7 @@ jobs:
             echo "App bundle not found: $APP"
             exit 1
           fi
+          du -sh "$APP"
           rm -rf Payload AsrRecognize-unsigned.ipa
           mkdir Payload
           cp -R "$APP" Payload/

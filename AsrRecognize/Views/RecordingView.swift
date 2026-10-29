@@ -8,14 +8,26 @@ struct RecordingView: View {
     @EnvironmentObject private var settings: AppSettings
 
     @StateObject private var transcriber = LiveTranscriber()
+    @StateObject private var local = LocalTranscriber()
 
     @State private var didStart = false
     @State private var showExitAlert = false
     @State private var showEmptyAlert = false
 
+    private var usingLocal: Bool { settings.engine == .qwen }
+    private var isRecording: Bool { usingLocal ? local.isRecording : transcriber.isRecording }
+    private var isPaused: Bool { usingLocal ? local.isPaused : transcriber.isPaused }
+    private var elapsed: TimeInterval { usingLocal ? local.elapsed : transcriber.elapsed }
+    private var segments: [TranscriptSegment] { usingLocal ? local.segments : transcriber.segments }
+    private var partialText: String { usingLocal ? local.partialText : transcriber.partialText }
+    private var level: CGFloat { usingLocal ? local.level : transcriber.level }
+    private var errorMessage: String? { usingLocal ? local.errorMessage : transcriber.errorMessage }
+    private var startDate: Date? { usingLocal ? local.startDate : transcriber.startDate }
+    private var audioFileName: String? { usingLocal ? local.audioFileName : transcriber.audioFileName }
+
     private var hasAnyContent: Bool {
-        !transcriber.segments.isEmpty
-            || !transcriber.partialText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !segments.isEmpty
+            || !partialText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     var body: some View {
@@ -25,9 +37,9 @@ struct RecordingView: View {
             VStack(spacing: 0) {
                 topBar
 
-                if transcriber.isRecording || transcriber.isPaused {
+                if isRecording || isPaused {
                     recordingContent
-                } else if let message = transcriber.errorMessage {
+                } else if let message = errorMessage {
                     errorState(message)
                 } else {
                     preparingState
@@ -36,7 +48,7 @@ struct RecordingView: View {
             .alert("没有识别到内容", isPresented: $showEmptyAlert) {
                 Button("继续记录", role: .cancel) {}
                 Button("放弃本次", role: .destructive) {
-                    transcriber.discard()
+                    discardSession()
                     dismiss()
                 }
             } message: {
@@ -48,11 +60,11 @@ struct RecordingView: View {
         .task {
             guard !didStart else { return }
             didStart = true
-            await transcriber.start(language: settings.languageCode, offlineOnly: settings.offlineOnly)
+            await startSession()
         }
         .onDisappear {
-            if transcriber.isRecording {
-                transcriber.stop()
+            if isRecording {
+                stopSession()
             }
         }
         .alert("结束本次记录？", isPresented: $showExitAlert) {
@@ -60,7 +72,7 @@ struct RecordingView: View {
                 Button("保存并退出") { finish() }
             }
             Button("放弃并退出", role: .destructive) {
-                transcriber.discard()
+                discardSession()
                 dismiss()
             }
             Button("继续记录", role: .cancel) {}
@@ -75,10 +87,10 @@ struct RecordingView: View {
         HStack {
             Button {
                 Haptics.tap()
-                if transcriber.isRecording || hasAnyContent {
+                if isRecording || hasAnyContent {
                     showExitAlert = true
                 } else {
-                    transcriber.discard()
+                    discardSession()
                     dismiss()
                 }
             } label: {
@@ -97,7 +109,7 @@ struct RecordingView: View {
             StatusPill(
                 text: recorderStatusText,
                 color: recorderStatusColor,
-                pulse: transcriber.isRecording && !transcriber.isPaused
+                pulse: isRecording && !isPaused
             )
 
             Spacer()
@@ -112,8 +124,8 @@ struct RecordingView: View {
                     .padding(.horizontal, 8)
             }
             .buttonStyle(.plain)
-            .disabled(!transcriber.isRecording && transcriber.segments.isEmpty)
-            .opacity(transcriber.isRecording || !transcriber.segments.isEmpty ? 1 : 0.35)
+            .disabled(!isRecording && segments.isEmpty)
+            .opacity(isRecording || !segments.isEmpty ? 1 : 0.35)
             .accessibilityLabel("结束并保存")
         }
         .padding(.horizontal, 22)
@@ -121,15 +133,15 @@ struct RecordingView: View {
     }
 
     private var recorderStatusText: String {
-        if transcriber.isRecording {
-            return transcriber.isPaused ? "PAUSED" : "REC"
+        if isRecording {
+            return isPaused ? "PAUSED" : "REC"
         }
         return "STANDBY"
     }
 
     private var recorderStatusColor: Color {
-        if transcriber.isRecording {
-            return transcriber.isPaused ? Theme.warning : Theme.record
+        if isRecording {
+            return isPaused ? Theme.warning : Theme.record
         }
         return Theme.textTertiary
     }
@@ -141,7 +153,7 @@ struct RecordingView: View {
             Spacer(minLength: 10)
 
             VStack(spacing: 16) {
-                Text(AppFormat.clock(transcriber.elapsed))
+                Text(AppFormat.clock(elapsed))
                     .font(.system(size: 64, weight: .thin, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(Theme.textPrimary)
@@ -149,8 +161,8 @@ struct RecordingView: View {
                     .lineLimit(1)
 
                 LiveWaveform(
-                    level: transcriber.level,
-                    isActive: transcriber.isRecording && !transcriber.isPaused
+                    level: level,
+                    isActive: isRecording && !isPaused
                 )
                 .frame(height: 72)
                 .padding(.horizontal, 28)
@@ -170,6 +182,15 @@ struct RecordingView: View {
     }
 
     private var recognitionLabel: String {
+        if usingLocal {
+            if local.isDraining {
+                return "本地 · 收尾中"
+            }
+            if !local.isPrepared {
+                return local.statusText
+            }
+            return settings.languageCode == "en-US" ? "ENGLISH · QWEN3" : "中文 · 本地 Qwen3"
+        }
         if settings.languageCode == "en-US" {
             return settings.offlineOnly ? "ENGLISH · OFFLINE" : "ENGLISH · LIVE"
         }
@@ -181,7 +202,7 @@ struct RecordingView: View {
             HStack {
                 SectionLabel(text: "实时转写")
                 Spacer()
-                Text("\(transcriber.segments.count) 段")
+                Text("\(segments.count) 段")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
                     .foregroundStyle(Theme.textTertiary)
             }
@@ -189,7 +210,7 @@ struct RecordingView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
-                        if transcriber.segments.isEmpty && transcriber.partialText.isEmpty {
+                        if segments.isEmpty && partialText.isEmpty {
                             Text("开始说话，文字会实时出现在这里…")
                                 .font(.system(size: 14))
                                 .foregroundStyle(Theme.textTertiary)
@@ -197,15 +218,15 @@ struct RecordingView: View {
                                 .padding(.bottom, 8)
                         }
 
-                        ForEach(transcriber.segments) { segment in
+                        ForEach(segments) { segment in
                             TranscriptRow(segment: segment)
                         }
 
-                        if !transcriber.partialText.isEmpty {
+                        if !partialText.isEmpty {
                             TranscriptRow(
                                 segment: TranscriptSegment(
-                                    text: transcriber.partialText,
-                                    timestamp: transcriber.elapsed
+                                    text: partialText,
+                                    timestamp: elapsed
                                 ),
                                 isPartial: true
                             )
@@ -218,10 +239,10 @@ struct RecordingView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .scrollIndicators(.hidden)
-                .onChange(of: transcriber.segments.count) { _, _ in
+                .onChange(of: segments.count) { _, _ in
                     scrollToBottom(proxy)
                 }
-                .onChange(of: transcriber.partialText) { _, _ in
+                .onChange(of: partialText) { _, _ in
                     scrollToBottom(proxy)
                 }
             }
@@ -252,13 +273,13 @@ struct RecordingView: View {
         HStack(spacing: 30) {
             Button {
                 Haptics.tap()
-                if transcriber.isPaused {
-                    transcriber.resume()
+                if isPaused {
+                    resumeSession()
                 } else {
-                    transcriber.pause()
+                    pauseSession()
                 }
             } label: {
-                Image(systemName: transcriber.isPaused ? "play.fill" : "pause.fill")
+                Image(systemName: isPaused ? "play.fill" : "pause.fill")
                     .font(.system(size: 19, weight: .semibold))
                     .foregroundStyle(Theme.textPrimary)
                     .frame(width: 64, height: 64)
@@ -266,7 +287,7 @@ struct RecordingView: View {
                     .overlay(Circle().strokeBorder(Theme.strokeStrong, lineWidth: 1))
             }
             .buttonStyle(PressableStyle())
-            .accessibilityLabel(transcriber.isPaused ? "继续录音" : "暂停录音")
+            .accessibilityLabel(isPaused ? "继续录音" : "暂停录音")
 
             Button {
                 finish()
@@ -297,12 +318,27 @@ struct RecordingView: View {
             ProgressView()
                 .controlSize(.large)
                 .tint(Theme.accent)
-            Text("正在准备麦克风…")
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(Theme.textSecondary)
-            Text("首次使用需要授权麦克风与语音识别")
-                .font(.system(size: 12))
-                .foregroundStyle(Theme.textTertiary)
+
+            if usingLocal {
+                Text(local.isPrepared ? "正在准备麦克风…" : "正在加载本地模型…")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Theme.textSecondary)
+                Text(local.statusText)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.textTertiary)
+
+                if local.loadFraction > 0, local.loadFraction < 1 {
+                    ProgressView(value: local.loadFraction)
+                        .frame(maxWidth: 220)
+                }
+            } else {
+                Text("正在准备麦克风…")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Theme.textSecondary)
+                Text("首次使用需要授权麦克风与语音识别")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.textTertiary)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -332,29 +368,32 @@ struct RecordingView: View {
                     .padding(.horizontal, 30)
             }
 
-            if !transcriber.segments.isEmpty {
-                Text("已保留 \(transcriber.segments.count) 段转写内容")
+            if !segments.isEmpty {
+                Text("已保留 \(segments.count) 段转写内容")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Theme.textTertiary)
             }
 
             VStack(spacing: 12) {
-                if !transcriber.segments.isEmpty {
+                if !segments.isEmpty {
                     PillButton(title: "保存已有内容", icon: "checkmark") {
                         saveMeeting()
+                    }
+                }
+
+                if usingLocal {
+                    PillButton(title: "改用系统语音识别", icon: "waveform", kind: segments.isEmpty ? .primary : .secondary) {
+                        switchToApple()
                     }
                 }
 
                 PillButton(
                     title: "重试",
                     icon: "arrow.clockwise",
-                    kind: transcriber.segments.isEmpty ? .primary : .secondary
+                    kind: segments.isEmpty && !usingLocal ? .primary : .secondary
                 ) {
                     Task {
-                        await transcriber.start(
-                            language: settings.languageCode,
-                            offlineOnly: settings.offlineOnly
-                        )
+                        await startSession()
                     }
                 }
 
@@ -371,22 +410,89 @@ struct RecordingView: View {
     // MARK: - Actions
 
     private func finish() {
-        guard transcriber.isRecording || !transcriber.segments.isEmpty else { return }
+        guard isRecording || !segments.isEmpty else { return }
+        guard !(usingLocal && local.isDraining) else { return }
 
-        if transcriber.isRecording {
+        if isRecording, usingLocal {
+            Task { await finishLocal() }
+            return
+        }
+
+        if isRecording {
             guard hasAnyContent else {
                 Haptics.warning()
                 showEmptyAlert = true
                 return
             }
-            transcriber.stop()
+            stopSession()
         }
 
         saveMeeting()
     }
 
+    private func finishLocal() async {
+        guard !local.isDraining else { return }
+        await local.stopAndFinish()
+        guard !segments.isEmpty else {
+            Haptics.warning()
+            showEmptyAlert = true
+            return
+        }
+        saveMeeting()
+    }
+
+    // MARK: - Session
+
+    private func startSession() async {
+        if usingLocal {
+            await local.start(language: settings.languageCode)
+        } else {
+            await transcriber.start(language: settings.languageCode, offlineOnly: settings.offlineOnly)
+        }
+    }
+
+    private func stopSession() {
+        if usingLocal {
+            local.stopImmediately()
+        } else {
+            transcriber.stop()
+        }
+    }
+
+    private func pauseSession() {
+        if usingLocal {
+            local.pause()
+        } else {
+            transcriber.pause()
+        }
+    }
+
+    private func resumeSession() {
+        if usingLocal {
+            local.resume()
+        } else {
+            transcriber.resume()
+        }
+    }
+
+    private func discardSession() {
+        if usingLocal {
+            local.discard()
+        } else {
+            transcriber.discard()
+        }
+    }
+
+    private func switchToApple() {
+        local.discard()
+        settings.engine = .apple
+        Task {
+            await transcriber.start(language: settings.languageCode, offlineOnly: settings.offlineOnly)
+        }
+    }
+
     private func saveMeeting() {
-        let transcript = transcriber.segments
+        let transcript = segments
             .map(\.text)
             .joined(separator: "\n")
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -397,14 +503,14 @@ struct RecordingView: View {
             return
         }
 
-        let createdAt = transcriber.startDate ?? Date()
+        let createdAt = startDate ?? Date()
         let meeting = Meeting(
             title: AppFormat.defaultTitle(for: createdAt),
             createdAt: createdAt,
-            duration: max(transcriber.elapsed, 1),
+            duration: max(elapsed, 1),
             transcript: transcript,
-            segments: transcriber.segments,
-            audioFileName: transcriber.audioFileName
+            segments: segments,
+            audioFileName: audioFileName
         )
 
         modelContext.insert(meeting)

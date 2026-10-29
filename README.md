@@ -3,7 +3,8 @@
 一款极简科技风的 iOS 会议纪要 App：实时语音转写、本地保存、可选 AI 纪要。
 
 - SwiftUI + SwiftData + Apple Speech + DeepSeek
-- iOS 17+，纯原生，无任何第三方依赖
+- 可选本地 Qwen3-ASR（全 Core ML，离线），基于 speech-swift
+- iOS 18+
 - 深色界面、实时声波、玻璃质感卡片、触觉反馈
 
 > ⚠️ 本工程在 Windows 上生成。iOS App 必须在 macOS + Xcode 中编译运行，Windows 无法直接运行。
@@ -26,7 +27,7 @@
 | --- | --- |
 | macOS | 14.5 或更新（Xcode 16 的要求） |
 | Xcode | 15 或更新（推荐 16） |
-| 运行系统 | iOS 17.0+（模拟器或真机） |
+| 运行系统 | iOS 18.0+（模拟器或真机；本地 Qwen3 引擎需要真机） |
 | 网络 | 语音识别与 AI 纪要需要网络（可切换为设备端识别） |
 
 > 语音识别在模拟器上可能不稳定或不支持，完整体验建议使用真机。
@@ -64,10 +65,16 @@
 - **搜索**：首页可按标题或转写正文搜索。
 - **隐私**：API Key 存 Keychain；无账号、无云端同步、无统计 SDK。
 
-### 识别语言 / 离线模式
+### 识别引擎 / 识别语言
 
-设置中可在中文与 English 之间切换，切换后对下一次录音生效。
-开启“仅设备端识别”后音频不离开设备，但需要设备支持离线语音模型，准确率可能略低。
+设置中可切换两种引擎：
+
+- **系统语音**：Apple Speech，实时出字，可用“仅设备端识别”减少联网。
+- **本地 Qwen3**：Qwen3-ASR 0.6B 全 Core ML 推理，完全离线；按语音段出字（非逐字），
+  模型约 0.9GB 随 App 打包，首次加载约 1 分钟，需要 iOS 18 与真机（模拟器无 ANE）。
+  模型缺失时录音页会提示并提供“改用系统语音识别”。
+
+识别语言可在中文与 English 之间切换，切换后对下一次录音生效。
 
 ---
 
@@ -86,6 +93,7 @@ AsrRecognize/
 │   │   └── SettingsView.swift
 │   ├── Services/
 │   │   ├── LiveTranscriber.swift # AVAudioEngine + Speech 实时转写
+│   │   ├── Qwen3/                # 本地 Qwen3-ASR：引擎、VAD、重采样、会话
 │   │   ├── AudioPlayer.swift
 │   │   ├── AudioStorage.swift
 │   │   ├── DeepSeekService.swift
@@ -98,6 +106,7 @@ AsrRecognize/
 │   └── Info.plist                # 权限、后台音频、启动屏
 ├── tools/
 │   ├── generate_xcodeproj.py     # 重新生成 .xcodeproj
+│   ├── prepare-model.sh          # 下载并编译 Qwen3 CoreML 模型
 │   └── make_icon.py              # 生成 1024 AppIcon
 └── README.md
 ```
@@ -124,8 +133,12 @@ Apple Speech 依赖网络与系统服务。确认网络可用；真机效果更�
 **Q：数据存在哪里？**
 录音在 App 沙盒 `Documents/Recordings`，会议数据在 SwiftData 数据库，API Key 在 Keychain。卸载 App 会全部清除。
 
+**Q：本地 Qwen3 引擎提示“模型未打包”？**
+仓库不包含 0.9GB 模型。在 Mac 上执行 `bash tools/prepare-model.sh` 后重新编译，
+或用 GitHub Actions 的带模型构建（见第七节）。
+
 **Q：支持 iPad / 横屏吗？**
-当前仅 iPhone 竖屏，部署目标 iOS 17。
+当前仅 iPhone 竖屏，部署目标 iOS 18。
 
 ---
 
@@ -143,12 +156,16 @@ python3 tools/make_icon.py            # 重新生成 AppIcon（需要 Pillow、n
 
 ## 七、零 Mac 方案：GitHub Actions 云构建
 
-仓库已包含 `.github/workflows/ios-build.yml`，不需要 Mac，也不需要签名证书。手动触发一次构建，会得到两个产物：
+仓库已包含 `.github/workflows/ios-build.yml`，不需要 Mac，也不需要签名证书。一次构建产出两个作业：
 
-| Artifact | 用途 |
-| --- | --- |
-| `AsrRecognize-simulator-appetize` | 上传到 Appetize.io，在 Windows 浏览器里直接操作 App |
-| `AsrRecognize-unsigned-ipa` | 在 Windows 用 Sideloadly 签名，安装到真实 iPhone |
+| Job / Artifact | 内容 | 用途 |
+| --- | --- | --- |
+| `simulator-app` → `AsrRecognize-simulator-appetize` | 不含模型，Debug 模拟器包，约几十 MB | 上传 Appetize.io，在 Windows 浏览器里操作界面 |
+| `offline-ipa` → `AsrRecognize-unsigned-ipa` | 先下载并编译 Qwen3 模型（约 0.9GB），Release 真机包 | 用 Sideloadly 签名装到 iPhone，可离线转写 |
+
+- 模拟器无 ANE，本地 Qwen3 引擎跑不动，所以模拟器包**不带模型**，默认走系统语音。
+- 带模型的 `offline-ipa` 作业较慢：下载 + coremlcompiler 编译约 20–40 分钟，产物约 0.9GB。
+- 只需要验证编译时，可在 Run workflow 时把 `include_model` 关掉。
 
 ### 1. 把项目推送到 GitHub
 
@@ -167,7 +184,7 @@ git push -u origin main
 ### 2. 运行云端构建
 
 打开仓库页面 → **Actions** → 左侧 **Build AsrRecognize** → **Run workflow** → 选择 `main` 并运行。
-两个 Job 会并行执行，约 3–6 分钟。完成后在本次运行页面底部的 **Artifacts** 下载：
+模拟器作业约 3–6 分钟；带模型作业通常 20–40 分钟（取决于 Hugging Face 下载速度）。完成后在本次运行页面底部的 **Artifacts** 下载：
 
 - `AsrRecognize-simulator-appetize.zip`：解压一次，得到内层 `AsrRecognize-simulator.zip`（里面是 `.app`）
 - `AsrRecognize-unsigned-ipa.zip`：解压一次，得到 `AsrRecognize-unsigned.ipa`
@@ -182,7 +199,7 @@ git push -u origin main
 2. 点击 **New App** → 平台选 **iOS** → 上传解压后的 `AsrRecognize-simulator.zip`。
 3. 上传完成后打开详情页的链接，即可在浏览器里点按 App。
 
-注意：免费额度约 30 分钟/月、单次会话 3 分钟；Appetize 主要用来预览界面和交互，**麦克风与 Apple Speech 支持有限**，实时转写请以真机为准。
+注意：免费额度约 30 分钟/月、单次会话 3 分钟；Appetize 主要用来预览界面和交互，**麦克风、Apple Speech 与本地模型推理都不可用**，实时转写请以真机为准。
 
 ### 4. 安装到 iPhone（Windows + Sideloadly）
 
@@ -192,4 +209,4 @@ git push -u origin main
 4. iPhone 首次安装后需开启开发者模式：**设置 → 隐私与安全性 → 开发者模式**，打开并重启。
 5. 若提示“未受信任的开发者”：**设置 → 通用 → VPN 与设备管理** → 信任你的 Apple ID。
 
-免费 Apple ID 签名的 App **7 天后过期**，到期用同样步骤重新签名即可。安装后麦克风、语音识别、录音回放与 DeepSeek 纪要均可正常使用。
+免费 Apple ID 签名的 App **7 天后过期**，到期用同样步骤重新签名即可。安装后在设置里把引擎切到“本地 Qwen3”，即可离线转写（首次加载约 1 分钟）。
