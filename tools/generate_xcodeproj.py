@@ -44,12 +44,13 @@ def build() -> str:
     build_files: list[str] = []
     source_build_ids: list[str] = []
 
-    def file_ref(path: Path, file_type: str) -> str:
+    def file_ref(path: Path, file_type: str, subpath: str | None = None) -> str:
         key = "file-" + str(path.relative_to(ROOT)).replace("\\", "/")
         ref_id = gid(key)
+        name = subpath if subpath is not None else path.name
         refs.append(
             f"\t\t{ref_id} /* {path.name} */ = {{isa = PBXFileReference; "
-            f"lastKnownFileType = {value(file_type)}; path = {value(path.name)}; "
+            f"lastKnownFileType = {value(file_type)}; path = {value(name)}; "
             'sourceTree = "<group>"; };\n'
         )
         return ref_id
@@ -88,7 +89,8 @@ def build() -> str:
     for group_name in sorted(groups):
         child_lines: list[str] = []
         for path in groups[group_name]:
-            ref_id = file_ref(path, "sourcecode.swift")
+            sub = "/".join(path.relative_to(APP_DIR).parts[1:])
+            ref_id = file_ref(path, "sourcecode.swift", sub)
             build_id = gid("build-" + str(path.relative_to(ROOT)).replace("\\", "/"))
             build_files.append(
                 f"\t\t{build_id} /* {path.name} in Sources */ = {{isa = PBXBuildFile; "

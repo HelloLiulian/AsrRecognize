@@ -55,12 +55,12 @@
 		0E8DCB1FCF2102DDC535D8D2 /* DeepSeekService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepSeekService.swift; sourceTree = "<group>"; };
 		68924159A5E2F3CD7AE9BE1E /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
 		06AD893B664ED142AAB6A864 /* LiveTranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTranscriber.swift; sourceTree = "<group>"; };
-		CAABFEC10EF5A5466A472E6A /* Audio16kConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Audio16kConverter.swift; sourceTree = "<group>"; };
-		5C7C5ED0AB07E399AA0AF69B /* AudioFileSink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFileSink.swift; sourceTree = "<group>"; };
-		7D5345905E785E0C7D06AEC1 /* ChunkTranscriptionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChunkTranscriptionEngine.swift; sourceTree = "<group>"; };
-		2E2DDA548C7A38FAF1B508E8 /* LocalTranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalTranscriber.swift; sourceTree = "<group>"; };
-		817007505D700077D5E504E6 /* Qwen3CoreMLEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Qwen3CoreMLEngine.swift; sourceTree = "<group>"; };
-		F60D2BF736F54B3EBE608A09 /* VoiceActivityDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceActivityDetector.swift; sourceTree = "<group>"; };
+		CAABFEC10EF5A5466A472E6A /* Audio16kConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Qwen3/Audio16kConverter.swift; sourceTree = "<group>"; };
+		5C7C5ED0AB07E399AA0AF69B /* AudioFileSink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Qwen3/AudioFileSink.swift; sourceTree = "<group>"; };
+		7D5345905E785E0C7D06AEC1 /* ChunkTranscriptionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Qwen3/ChunkTranscriptionEngine.swift; sourceTree = "<group>"; };
+		2E2DDA548C7A38FAF1B508E8 /* LocalTranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Qwen3/LocalTranscriber.swift; sourceTree = "<group>"; };
+		817007505D700077D5E504E6 /* Qwen3CoreMLEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Qwen3/Qwen3CoreMLEngine.swift; sourceTree = "<group>"; };
+		F60D2BF736F54B3EBE608A09 /* VoiceActivityDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Qwen3/VoiceActivityDetector.swift; sourceTree = "<group>"; };
 		1FD9528E86078D8DB7D2689A /* Formatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatters.swift; sourceTree = "<group>"; };
 		87087A3F2F218C7F5A354E49 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 		C04028AB8F9DE1E7ADA16E7C /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
