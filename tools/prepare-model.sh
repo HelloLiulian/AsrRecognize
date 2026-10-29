@@ -36,14 +36,18 @@ fi
 note "下载模型仓库 ${REPO}（约 1GB，首次较慢）"
 if [[ "$DL_KIND" == "hf" ]]; then
   hf download "$REPO" --local-dir "$SRC"
-  hf download "$TOKENIZER_REPO" --include vocab.json merges.txt tokenizer_config.json --local-dir "$TOK"
+  # 新版 hf CLI：显式文件名走位置参数，--include 会被忽略
+  hf download "$TOKENIZER_REPO" vocab.json merges.txt tokenizer_config.json --local-dir "$TOK"
 else
   huggingface-cli download "$REPO" --local-dir "$SRC"
-  huggingface-cli download "$TOKENIZER_REPO" vocab.json merges.txt tokenizer_config.json --local-dir "$TOK"
+  huggingface-cli download "$TOKENIZER_REPO" --include vocab.json merges.txt tokenizer_config.json --local-dir "$TOK"
 fi
 
 note "仓库文件清单（用于人工核对解码器结构）"
 find "$SRC" -maxdepth 3 \( -name "*.mlpackage" -o -name "*.mlmodelc" -o -name "config.json" \) -print | sort
+
+note "tokenizer 仓库文件"
+find "$TOK" -maxdepth 2 -type f -print | sort | head -20
 
 find_model() {
   local name="$1"
@@ -121,10 +125,27 @@ JSON
 fi
 
 # --- Tokenizer ---
-for f in vocab.json merges.txt tokenizer_config.json; do
-  [[ -f "$TOK/$f" ]] || die "缺少 tokenizer 文件: $f"
-  cp "$TOK/$f" "$DEST/$f"
-done
+# 优先使用 tokenizer 仓库的文件，其次复用模型仓库自带的同名文件
+copy_tokenizer() {
+  local name="$1" required="${2:-optional}" src=""
+  for cand in "$TOK/$name" "$SRC/$name"; do
+    if [[ -f "$cand" ]]; then src="$cand"; break; fi
+  done
+  if [[ -z "$src" ]]; then
+    src="$(find "$SRC" "$TOK" -name "$name" -type f -print -quit 2>/dev/null || true)"
+  fi
+  if [[ -z "$src" ]]; then
+    [[ "$required" == "required" ]] && die "缺少 tokenizer 文件: $name"
+    echo "警告: 缺少可选 tokenizer 文件 ${name}，继续打包" >&2
+    return 0
+  fi
+  cp "$src" "$DEST/$name"
+  note "tokenizer: $(basename "$src") <- ${src}"
+}
+
+copy_tokenizer vocab.json required
+copy_tokenizer merges.txt optional
+copy_tokenizer tokenizer_config.json optional
 
 # --- 校验与体积 ---
 required=(
@@ -134,8 +155,6 @@ required=(
   decoder_part2.mlmodelc
   config.json
   vocab.json
-  merges.txt
-  tokenizer_config.json
 )
 for f in "${required[@]}"; do
   [[ -e "$DEST/$f" ]] || die "输出缺少 $f"
