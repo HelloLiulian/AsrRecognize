@@ -22,8 +22,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Show toolchain
+      - name: Select Xcode 26
         run: |
+          LATEST=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -n 1)
+          if [ -n "$LATEST" ]; then sudo xcode-select -s "$LATEST"; fi
           xcodebuild -version
           uname -m
 
@@ -31,8 +33,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/Library/Caches/org.swift.swiftpm
-          key: spm-${{ runner.os }}-${{ hashFiles('AsrRecognize.xcodeproj/project.pbxproj') }}
-          restore-keys: spm-${{ runner.os }}-
+          key: spm-${{ runner.os }}-26-${{ hashFiles('AsrRecognize.xcodeproj/project.pbxproj') }}
+          restore-keys: spm-${{ runner.os }}-26-
 
       - name: Resolve packages
         run: |
@@ -82,13 +84,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Show toolchain
+      - name: Select Xcode 26
         run: |
+          LATEST=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -n 1)
+          if [ -n "$LATEST" ]; then sudo xcode-select -s "$LATEST"; fi
           xcodebuild -version
           uname -m
 
       - name: Install Hugging Face CLI
-        run: python3 -m pip install -U huggingface_hub
+        run: |
+          python3 -m venv "$RUNNER_TEMP/hf"
+          "$RUNNER_TEMP/hf/bin/pip" install -U huggingface_hub
+          echo "$RUNNER_TEMP/hf/bin" >> "$GITHUB_PATH"
 
       - name: Prepare Qwen3 CoreML model
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.include_model }}
@@ -100,8 +107,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/Library/Caches/org.swift.swiftpm
-          key: spm-${{ runner.os }}-${{ hashFiles('AsrRecognize.xcodeproj/project.pbxproj') }}
-          restore-keys: spm-${{ runner.os }}-
+          key: spm-${{ runner.os }}-26-${{ hashFiles('AsrRecognize.xcodeproj/project.pbxproj') }}
+          restore-keys: spm-${{ runner.os }}-26-
 
       - name: Resolve packages
         run: |
