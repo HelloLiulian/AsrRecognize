@@ -68,18 +68,19 @@ final class AppSettings: ObservableObject {
             engine = LocalModelAssets.isBundled ? .qwen : .apple
         }
 
-        aiBaseURL = defaults.string(forKey: Keys.aiBaseURL) ?? Self.defaultBaseURL
+        let storedBaseURL = defaults.string(forKey: Keys.aiBaseURL) ?? Self.defaultBaseURL
+        aiBaseURL = storedBaseURL
         aiModel = defaults.string(forKey: Keys.aiModel) ?? Self.defaultModel
 
+        let account = Self.keychainAccount(for: storedBaseURL)
         let legacyKey = KeychainStore.read(Keys.apiKey)
         if !legacyKey.isEmpty {
-            let account = Self.keychainAccount(for: aiBaseURL)
             if KeychainStore.read(account).isEmpty {
                 KeychainStore.save(legacyKey, for: account)
             }
             KeychainStore.delete(Keys.apiKey)
         }
-        apiKey = KeychainStore.read(Self.keychainAccount(for: aiBaseURL))
+        apiKey = KeychainStore.read(account)
     }
 
     static func keychainAccount(for baseURL: String) -> String {
