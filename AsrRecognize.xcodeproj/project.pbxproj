@@ -41,6 +41,7 @@
 		2D57CB25D60977B1C222725F /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87087A3F2F218C7F5A354E49 /* Haptics.swift */; };
 		DE6E015F4A294E55475A965C /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 669593CEA96D7AA6B50E8993 /* ActivityView.swift */; };
 		E2A4D6778AD923AA43858E74 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C04028AB8F9DE1E7ADA16E7C /* HomeView.swift */; };
+		AFD4DC8227F575BAC6B9D3F0 /* ImportSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E8E61A394FDFD879322701 /* ImportSetupView.swift */; };
 		88E2E49CF23D0388F3129D8A /* MeetingDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4259353F19E8F1E1833F94B5 /* MeetingDetailView.swift */; };
 		28C7C4C58B14B498D49D6F57 /* RecordingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5E34C474B8829BC43E8C156 /* RecordingView.swift */; };
 		43E3DC4CF9003A305F396808 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B4B5AB3060E624E42A85BDE /* SettingsView.swift */; };
@@ -82,6 +83,7 @@
 		87087A3F2F218C7F5A354E49 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 		669593CEA96D7AA6B50E8993 /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
 		C04028AB8F9DE1E7ADA16E7C /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		B7E8E61A394FDFD879322701 /* ImportSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSetupView.swift; sourceTree = "<group>"; };
 		4259353F19E8F1E1833F94B5 /* MeetingDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingDetailView.swift; sourceTree = "<group>"; };
 		E5E34C474B8829BC43E8C156 /* RecordingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingView.swift; sourceTree = "<group>"; };
 		1B4B5AB3060E624E42A85BDE /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -202,6 +204,7 @@
 			children = (
 				669593CEA96D7AA6B50E8993 /* ActivityView.swift */,
 				C04028AB8F9DE1E7ADA16E7C /* HomeView.swift */,
+				B7E8E61A394FDFD879322701 /* ImportSetupView.swift */,
 				4259353F19E8F1E1833F94B5 /* MeetingDetailView.swift */,
 				E5E34C474B8829BC43E8C156 /* RecordingView.swift */,
 				1B4B5AB3060E624E42A85BDE /* SettingsView.swift */,
@@ -314,6 +317,7 @@
 				2D57CB25D60977B1C222725F /* Haptics.swift in Sources */,
 				DE6E015F4A294E55475A965C /* ActivityView.swift in Sources */,
 				E2A4D6778AD923AA43858E74 /* HomeView.swift in Sources */,
+				AFD4DC8227F575BAC6B9D3F0 /* ImportSetupView.swift in Sources */,
 				88E2E49CF23D0388F3129D8A /* MeetingDetailView.swift in Sources */,
 				28C7C4C58B14B498D49D6F57 /* RecordingView.swift in Sources */,
 				43E3DC4CF9003A305F396808 /* SettingsView.swift in Sources */,
