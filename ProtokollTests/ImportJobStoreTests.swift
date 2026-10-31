@@ -1,3 +1,4 @@
+import Foundation
 import XCTest
 @testable import ProtokollLogic
 
@@ -67,5 +68,70 @@ final class ImportJobStoreTests: XCTestCase {
         await store.delete(id: job.id)
         let jobs = await store.resumableJobs()
         XCTAssertTrue(jobs.isEmpty)
+    }
+
+    func testAppendRecoversFromPartialTrailingLine() async throws {
+        let job = makeJob()
+        try await store.create(job)
+        let first = TranscriptSegment(text: "Hallo", timestamp: 1)
+        try await store.append(first, to: job.id)
+
+        let segmentsURL = directory
+            .appendingPathComponent(job.id.uuidString, isDirectory: true)
+            .appendingPathComponent("segments.jsonl")
+        let handle = try FileHandle(forWritingTo: segmentsURL)
+        defer { try? handle.close() }
+        try handle.seekToEnd()
+        try handle.write(contentsOf: Data("{\"id\":\"broken".utf8))
+
+        let second = TranscriptSegment(text: "Welt", timestamp: 2)
+        try await store.append(second, to: job.id)
+
+        let segments = await store.segments(for: job.id)
+        XCTAssertEqual(segments.map(\.text), ["Hallo", "Welt"])
+    }
+
+    func testPruneFinishedRemovesOnlyFinishedJobs() async throws {
+        var running = makeJob()
+        running.status = .running
+        var finished = makeJob()
+        finished.status = .finished
+        try await store.create(running)
+        try await store.create(finished)
+        try await store.append(TranscriptSegment(text: "Fertig", timestamp: 1), to: finished.id)
+
+        await store.pruneFinished()
+
+        let finishedJobs = await store.finishedJobs()
+        XCTAssertTrue(finishedJobs.isEmpty)
+        let resumable = await store.resumableJobs()
+        XCTAssertEqual(resumable.map(\.id), [running.id])
+
+        let finishedDirectory = directory.appendingPathComponent(finished.id.uuidString, isDirectory: true)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: finishedDirectory.path))
+        let runningDirectory = directory.appendingPathComponent(running.id.uuidString, isDirectory: true)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: runningDirectory.path))
+    }
+
+    func testSegmentsSkipsCorruptLine() async throws {
+        let job = makeJob()
+        try await store.create(job)
+
+        let encoder = JSONEncoder()
+        var contents = Data()
+        contents.append(try encoder.encode(TranscriptSegment(text: "Hallo", timestamp: 1)))
+        contents.append(0x0A)
+        contents.append(Data("kein json".utf8))
+        contents.append(0x0A)
+        contents.append(try encoder.encode(TranscriptSegment(text: "Welt", timestamp: 2)))
+        contents.append(0x0A)
+
+        let segmentsURL = directory
+            .appendingPathComponent(job.id.uuidString, isDirectory: true)
+            .appendingPathComponent("segments.jsonl")
+        try contents.write(to: segmentsURL)
+
+        let segments = await store.segments(for: job.id)
+        XCTAssertEqual(segments.map(\.text), ["Hallo", "Welt"])
     }
 }
