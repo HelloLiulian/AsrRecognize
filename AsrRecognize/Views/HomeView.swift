@@ -1,5 +1,7 @@
+import AVFoundation
 import SwiftData
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
@@ -11,6 +13,19 @@ struct HomeView: View {
     @State private var showSettings = false
     @State private var showImporter = false
     @State private var pendingDeletion: Meeting?
+    @State private var path = NavigationPath()
+    @State private var pendingImport: PendingImport?
+    @State private var startedImport: PendingImport?
+    @State private var setupImport: PendingImport?
+    @State private var activeImport: PendingImport?
+    @State private var resumableJobs: [ImportJob] = []
+    @State private var importError: String?
+
+    struct PendingImport: Identifiable {
+        let id = UUID()
+        var job: ImportJob
+        var audioURL: URL
+    }
 
     private var filteredMeetings: [Meeting] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -40,7 +55,7 @@ struct HomeView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ZStack {
                 AuroraBackground()
 
@@ -48,6 +63,10 @@ struct HomeView: View {
                     VStack(alignment: .leading, spacing: 22) {
                         header
                         searchField
+
+                        if let job = resumableJobs.first {
+                            resumeBanner(job)
+                        }
 
                         if !meetings.isEmpty {
                             statsStrip
@@ -83,6 +102,54 @@ struct HomeView: View {
             } message: { meeting in
                 Text("Transkript, Protokoll und Aufnahme von „\(meeting.title)“ werden dauerhaft gelöscht.")
             }
+            .navigationDestination(for: UUID.self) { id in
+                if let meeting = meetings.first(where: { $0.id == id }) {
+                    MeetingDetailView(meeting: meeting)
+                        .environmentObject(settings)
+                }
+            }
+            .fileImporter(
+                isPresented: $showImporter,
+                allowedContentTypes: [.audio],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case .success(let urls):
+                    if let url = urls.first { importAudio(from: url) }
+                case .failure(let error):
+                    importError = error.localizedDescription
+                }
+            }
+            .sheet(item: $pendingImport, onDismiss: handleSetupDismissed) { pending in
+                ImportSetupView(job: pending.job) { engine, language, title in
+                    startImport(pending, engine: engine, language: language, title: title)
+                }
+                .environmentObject(settings)
+            }
+            .fullScreenCover(item: $activeImport, onDismiss: {
+                Task { await loadResumableJobs() }
+            }) { active in
+                ImportProgressView(
+                    job: active.job,
+                    audioURL: active.audioURL,
+                    onComplete: { job, segments in
+                        finishImport(job: job, segments: segments)
+                    },
+                    onCancel: {
+                        cancelImport(active)
+                    }
+                )
+                .environmentObject(settings)
+            }
+            .alert("Import fehlgeschlagen", isPresented: Binding(
+                get: { importError != nil },
+                set: { if !$0 { importError = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(importError ?? "")
+            }
+            .task { await loadResumableJobs() }
         }
     }
 
@@ -237,9 +304,7 @@ struct HomeView: View {
             } else {
                 LazyVStack(spacing: 12) {
                     ForEach(filteredMeetings) { meeting in
-                        NavigationLink {
-                            MeetingDetailView(meeting: meeting)
-                        } label: {
+                        NavigationLink(value: meeting.id) {
                             MeetingCardView(meeting: meeting)
                         }
                         .buttonStyle(PressableStyle())
@@ -337,6 +402,168 @@ struct HomeView: View {
         try? modelContext.save()
         pendingDeletion = nil
         Haptics.success()
+    }
+
+    private func resumeBanner(_ job: ImportJob) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "arrow.clockwise.circle.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(Theme.accentBright)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Unvollständige Transkription")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.textPrimary)
+                Text(job.title)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.textTertiary)
+                    .lineLimit(1)
+            }
+            Spacer()
+            Button("Fortsetzen") { resume(job) }
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Theme.accentBright)
+            Button {
+                discard(job)
+            } label: {
+                Image(systemName: "trash")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Theme.textTertiary)
+            }
+            .accessibilityLabel("Verwerfen")
+        }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.accent.opacity(0.08)))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Theme.accent.opacity(0.22), lineWidth: 1))
+    }
+
+    private func loadResumableJobs() async {
+        resumableJobs = await ImportJobStore.shared.resumableJobs()
+    }
+
+    private func importAudio(from url: URL) {
+        Task {
+            let accessed = url.startAccessingSecurityScopedResource()
+            defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+            do {
+                let asset = AVURLAsset(url: url)
+                let duration = try await asset.load(.duration).seconds
+                let size = Int64((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
+                let audioTracks = try await asset.loadTracks(withMediaType: .audio)
+                guard !audioTracks.isEmpty else { throw ImportValidation.Failure.invalid }
+                try ImportValidation.validate(duration: duration, fileSize: size)
+
+                // The import copies the file, so peak footprint is twice the source size.
+                let values = try? url.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+                try ImportValidation.validateAvailableSpace(
+                    required: size * 2,
+                    available: values?.volumeAvailableCapacityForImportantUsage
+                )
+
+                let destination = AudioStorage.makeImportedFileURL(extension: url.pathExtension)
+                try FileManager.default.copyItem(at: url, to: destination)
+
+                let originalName = url.lastPathComponent
+                let title = FilenameSanitizer.sanitize(
+                    url.deletingPathExtension().lastPathComponent,
+                    fallback: "Importierte Aufnahme"
+                )
+                let job = ImportJob(
+                    id: UUID(),
+                    audioFileName: destination.lastPathComponent,
+                    originalFileName: originalName,
+                    title: title,
+                    engine: settings.engine.rawValue,
+                    languageCode: settings.languageCode,
+                    offlineOnly: settings.offlineOnly,
+                    duration: duration,
+                    framesProcessed: 0,
+                    sourceSampleRate: 0,
+                    status: .running,
+                    createdAt: Date()
+                )
+                try await ImportJobStore.shared.create(job)
+                let pending = PendingImport(job: job, audioURL: destination)
+                setupImport = pending
+                pendingImport = pending
+            } catch {
+                importError = error.localizedDescription
+            }
+        }
+    }
+
+    private func startImport(_ pending: PendingImport, engine: ASREngine, language: String, title: String) {
+        var job = pending.job
+        job.engine = engine.rawValue
+        job.languageCode = language
+        job.title = title
+        job.offlineOnly = settings.offlineOnly
+        setupImport = nil
+        startedImport = PendingImport(job: job, audioURL: pending.audioURL)
+        pendingImport = nil
+    }
+
+    private func handleSetupDismissed() {
+        if let started = startedImport {
+            startedImport = nil
+            activeImport = started
+        } else if let pending = setupImport {
+            setupImport = nil
+            cancelImport(PendingImport(job: pending.job, audioURL: pending.audioURL))
+        }
+    }
+
+    private func resume(_ job: ImportJob) {
+        guard let url = job.audioURL else {
+            importError = "Die Audiodatei fehlt. Die unvollständige Transkription wird verworfen."
+            discard(job)
+            return
+        }
+        activeImport = PendingImport(job: job, audioURL: url)
+    }
+
+    private func finishImport(job: ImportJob, segments: [TranscriptSegment]) {
+        let transcript = segments.map(\.text).joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !transcript.isEmpty else {
+            importError = "Es wurde kein Text erkannt."
+            activeImport = nil
+            return
+        }
+        let meeting = Meeting(
+            title: job.title,
+            createdAt: job.createdAt,
+            duration: job.duration,
+            transcript: transcript,
+            segments: segments,
+            audioFileName: job.audioFileName,
+            source: .import,
+            originalFileName: job.originalFileName
+        )
+        modelContext.insert(meeting)
+        try? modelContext.save()
+        Task {
+            await ImportJobStore.shared.delete(id: job.id)
+            resumableJobs = await ImportJobStore.shared.resumableJobs()
+        }
+        activeImport = nil
+        Haptics.success()
+        path.append(meeting.id)
+    }
+
+    private func cancelImport(_ active: PendingImport) {
+        AudioStorage.delete(named: active.job.audioFileName)
+        Task {
+            await ImportJobStore.shared.delete(id: active.job.id)
+            resumableJobs = await ImportJobStore.shared.resumableJobs()
+        }
+        activeImport = nil
+    }
+
+    private func discard(_ job: ImportJob) {
+        AudioStorage.delete(named: job.audioFileName)
+        Task {
+            await ImportJobStore.shared.delete(id: job.id)
+            resumableJobs = await ImportJobStore.shared.resumableJobs()
+        }
     }
 }
 

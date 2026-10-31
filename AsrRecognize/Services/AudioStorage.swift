@@ -28,3 +28,10 @@ enum AudioStorage {
         try? FileManager.default.removeItem(at: url(for: fileName))
     }
 }
+
+extension ImportJob {
+    var audioURL: URL? {
+        let url = AudioStorage.url(for: audioFileName)
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+    }
+}

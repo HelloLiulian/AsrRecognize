@@ -208,12 +208,16 @@ final class AudioFileTranscriber: ObservableObject {
             statusText = "Transkription abgeschlossen"
             phase = .finished
         } catch is CancellationError {
-            job.status = .paused
-            try? await store.update(job)
-            self.job = job
-            estimatedRemaining = nil
-            statusText = ""
-            phase = .paused
+            if generation == expected {
+                if !cancelRequested {
+                    job.status = .paused
+                    try? await store.update(job)
+                }
+                self.job = job
+                estimatedRemaining = nil
+                statusText = ""
+                phase = cancelRequested ? .idle : .paused
+            }
         } catch {
             if let localized = error as? LocalizedError, let description = localized.errorDescription {
                 errorMessage = description
