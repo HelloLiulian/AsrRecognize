@@ -20,6 +20,7 @@
 		4194178AE7F9094DB45BD327 /* TranscriptSegment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6998A6BD81D3F34C64EEC231 /* TranscriptSegment.swift */; };
 		ED8B943313649BB2B4FC0A65 /* AISummaryRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50CA0D7B8FEFBF6BC81407F5 /* AISummaryRequest.swift */; };
 		94FBAA52C74506EF1A73736B /* AISummaryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFCD2B976A04CF5DCBF7980F /* AISummaryService.swift */; };
+		9FA6CDDC8BE1BC979B597B3B /* AppleChunkEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DD69E289507339E28534D4D /* AppleChunkEngine.swift */; };
 		9260CC1D61AD0C4DFA09FE3D /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13305CF2077890EBE460E50A /* AppSettings.swift */; };
 		284977CE4C1118776525153B /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68901D57323EC9B66BB8A9EB /* AudioPlayer.swift */; };
 		612122EB1AEB179932E8C971 /* AudioStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 061E67879890DE81033FFE64 /* AudioStorage.swift */; };
@@ -59,6 +60,7 @@
 		6998A6BD81D3F34C64EEC231 /* TranscriptSegment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptSegment.swift; sourceTree = "<group>"; };
 		50CA0D7B8FEFBF6BC81407F5 /* AISummaryRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISummaryRequest.swift; sourceTree = "<group>"; };
 		FFCD2B976A04CF5DCBF7980F /* AISummaryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISummaryService.swift; sourceTree = "<group>"; };
+		0DD69E289507339E28534D4D /* AppleChunkEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleChunkEngine.swift; sourceTree = "<group>"; };
 		13305CF2077890EBE460E50A /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		68901D57323EC9B66BB8A9EB /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		061E67879890DE81033FFE64 /* AudioStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioStorage.swift; sourceTree = "<group>"; };
@@ -163,6 +165,7 @@
 			children = (
 				50CA0D7B8FEFBF6BC81407F5 /* AISummaryRequest.swift */,
 				FFCD2B976A04CF5DCBF7980F /* AISummaryService.swift */,
+				0DD69E289507339E28534D4D /* AppleChunkEngine.swift */,
 				13305CF2077890EBE460E50A /* AppSettings.swift */,
 				68901D57323EC9B66BB8A9EB /* AudioPlayer.swift */,
 				061E67879890DE81033FFE64 /* AudioStorage.swift */,
@@ -287,6 +290,7 @@
 				4194178AE7F9094DB45BD327 /* TranscriptSegment.swift in Sources */,
 				ED8B943313649BB2B4FC0A65 /* AISummaryRequest.swift in Sources */,
 				94FBAA52C74506EF1A73736B /* AISummaryService.swift in Sources */,
+				9FA6CDDC8BE1BC979B597B3B /* AppleChunkEngine.swift in Sources */,
 				9260CC1D61AD0C4DFA09FE3D /* AppSettings.swift in Sources */,
 				284977CE4C1118776525153B /* AudioPlayer.swift in Sources */,
 				612122EB1AEB179932E8C971 /* AudioStorage.swift in Sources */,

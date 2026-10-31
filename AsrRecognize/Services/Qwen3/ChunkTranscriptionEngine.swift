@@ -4,6 +4,11 @@ enum TranscriptionEngineError: LocalizedError {
     case notPrepared
     case modelMissing
     case emptyResult
+    case permissionDenied
+    case unsupportedLanguage
+    case offlineUnavailable
+    case serviceUnavailable
+    case timeout
 
     var errorDescription: String? {
         switch self {
@@ -13,6 +18,16 @@ enum TranscriptionEngineError: LocalizedError {
             return "Das lokale Qwen3-Modell ist in dieser App-Version nicht enthalten."
         case .emptyResult:
             return "Die lokale Erkennung hat keinen Text geliefert."
+        case .permissionDenied:
+            return "Spracherkennung ist nicht erlaubt. Bitte in den iOS-Einstellungen aktivieren."
+        case .unsupportedLanguage:
+            return "Für diese Sprache ist keine Spracherkennung verfügbar."
+        case .offlineUnavailable:
+            return "Die deutsche Offline-Erkennung ist auf diesem Gerät nicht verfügbar."
+        case .serviceUnavailable:
+            return "Die Spracherkennung ist derzeit nicht verfügbar. Bitte prüfen Sie die Internetverbindung."
+        case .timeout:
+            return "Die Spracherkennung hat zu lange nicht geantwortet."
         }
     }
 }
