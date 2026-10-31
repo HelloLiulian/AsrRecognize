@@ -10,6 +10,38 @@ final class ExportServiceTests: XCTestCase {
         XCTAssertEqual(FilenameSanitizer.sanitize(String(repeating: "a", count: 80)).count, 60)
     }
 
+    func testSanitizeLimitsLongEmojiTitleByUTF8Bytes() {
+        let sanitized = FilenameSanitizer.sanitize(String(repeating: "🎉🚀", count: 40))
+        XCTAssertLessThanOrEqual(sanitized.utf8.count, 180)
+        XCTAssertLessThanOrEqual(sanitized.count, 60)
+        XCTAssertFalse(sanitized.isEmpty)
+    }
+
+    func testSanitizeLimitsLongCJKTitleByUTF8Bytes() {
+        let sanitized = FilenameSanitizer.sanitize(String(repeating: "架构决策会议", count: 20))
+        XCTAssertLessThanOrEqual(sanitized.utf8.count, 180)
+        XCTAssertFalse(sanitized.isEmpty)
+    }
+
+    func testGeneratedFilenameStaysBelowAPFSByteLimit() throws {
+        let payload = ExportPayload(
+            title: String(repeating: "🎉🚀", count: 40) + " sehr langes Meeting über Architektur Entscheidungen",
+            date: date,
+            duration: 60,
+            transcript: "Text.",
+            summary: nil
+        )
+        let url = try ExportService.writeText(for: payload)
+        XCTAssertTrue(url.lastPathComponent.hasPrefix("Protokoll_"))
+        XCTAssertLessThanOrEqual(url.lastPathComponent.utf8.count, 255)
+    }
+
+    func testEmptyTitleProducesSingleProtokollSegment() throws {
+        let payload = ExportPayload(title: "   ", date: date, duration: 60, transcript: "Text.", summary: nil)
+        let url = try ExportService.writeText(for: payload)
+        XCTAssertEqual(url.lastPathComponent, "Protokoll_\(AppFormat.fileStamp.string(from: date)).txt")
+    }
+
     func testTextWithoutSummary() {
         let payload = ExportPayload(
             title: "Teamrunde",
