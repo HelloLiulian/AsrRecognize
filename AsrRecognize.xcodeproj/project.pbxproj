@@ -24,6 +24,7 @@
 		284977CE4C1118776525153B /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68901D57323EC9B66BB8A9EB /* AudioPlayer.swift */; };
 		612122EB1AEB179932E8C971 /* AudioStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 061E67879890DE81033FFE64 /* AudioStorage.swift */; };
 		CD9489EBA1485C57967A3B91 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ACDE46BEB924E7E00FA5870 /* ExportService.swift */; };
+		33F33C39478E15494A38EFA3 /* ImportJobStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B4C5EB751D3199C10A10FC5 /* ImportJobStore.swift */; };
 		207EB54F9B73DE9011E5AA6E /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68924159A5E2F3CD7AE9BE1E /* KeychainStore.swift */; };
 		4419E89815911023C9BE4A46 /* LiveTranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06AD893B664ED142AAB6A864 /* LiveTranscriber.swift */; };
 		AFD025B46DC3B17241BFC691 /* Audio16kConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAABFEC10EF5A5466A472E6A /* Audio16kConverter.swift */; };
@@ -61,6 +62,7 @@
 		68901D57323EC9B66BB8A9EB /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		061E67879890DE81033FFE64 /* AudioStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioStorage.swift; sourceTree = "<group>"; };
 		2ACDE46BEB924E7E00FA5870 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
+		6B4C5EB751D3199C10A10FC5 /* ImportJobStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportJobStore.swift; sourceTree = "<group>"; };
 		68924159A5E2F3CD7AE9BE1E /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
 		06AD893B664ED142AAB6A864 /* LiveTranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTranscriber.swift; sourceTree = "<group>"; };
 		CAABFEC10EF5A5466A472E6A /* Audio16kConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Qwen3/Audio16kConverter.swift; sourceTree = "<group>"; };
@@ -163,6 +165,7 @@
 				68901D57323EC9B66BB8A9EB /* AudioPlayer.swift */,
 				061E67879890DE81033FFE64 /* AudioStorage.swift */,
 				2ACDE46BEB924E7E00FA5870 /* ExportService.swift */,
+				6B4C5EB751D3199C10A10FC5 /* ImportJobStore.swift */,
 				68924159A5E2F3CD7AE9BE1E /* KeychainStore.swift */,
 				06AD893B664ED142AAB6A864 /* LiveTranscriber.swift */,
 				CAABFEC10EF5A5466A472E6A /* Audio16kConverter.swift */,
@@ -285,6 +288,7 @@
 				284977CE4C1118776525153B /* AudioPlayer.swift in Sources */,
 				612122EB1AEB179932E8C971 /* AudioStorage.swift in Sources */,
 				CD9489EBA1485C57967A3B91 /* ExportService.swift in Sources */,
+				33F33C39478E15494A38EFA3 /* ImportJobStore.swift in Sources */,
 				207EB54F9B73DE9011E5AA6E /* KeychainStore.swift in Sources */,
 				4419E89815911023C9BE4A46 /* LiveTranscriber.swift in Sources */,
 				AFD025B46DC3B17241BFC691 /* Audio16kConverter.swift in Sources */,
