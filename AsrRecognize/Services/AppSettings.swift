@@ -18,7 +18,7 @@ final class AppSettings: ObservableObject {
     }
 
     static let defaultBaseURL = "https://api.deepseek.com"
-    static let defaultModel = "deepseek-chat"
+    static let defaultModel = "deepseek-flash"
 
     @Published var aiBaseURL: String {
         didSet {
