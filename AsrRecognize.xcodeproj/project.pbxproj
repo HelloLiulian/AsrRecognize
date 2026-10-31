@@ -226,12 +226,11 @@
 			};
 			buildConfigurationList = 388C81DB06DA9416BE91A80E /* Build configuration list for PBXProject "AsrRecognize" */;
 			compatibilityVersion = "Xcode 14.0";
-			developmentRegion = en;
+			developmentRegion = de;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				en,
+				de,
 				Base,
-				"zh-Hans",
 			);
 			mainGroup = 956934E60556FDCE0710C957;
 			productRefGroup = CC0F68FE2D81F9614883F277 /* Products */;

@@ -52,7 +52,7 @@ struct SettingsView: View {
                     .tracking(2.2)
                     .foregroundStyle(Theme.textTertiary)
 
-                Text("设置")
+                Text("Einstellungen")
                     .font(.system(size: 32, weight: .bold))
                     .tracking(-0.8)
                     .foregroundStyle(Theme.textPrimary)
@@ -63,7 +63,7 @@ struct SettingsView: View {
             Button {
                 dismiss()
             } label: {
-                Text("完成")
+                Text("Fertig")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Theme.accent)
                     .padding(.horizontal, 18)
@@ -72,7 +72,7 @@ struct SettingsView: View {
                     .overlay(Capsule().strokeBorder(Theme.accent.opacity(0.25), lineWidth: 1))
             }
             .buttonStyle(PressableStyle())
-            .accessibilityLabel("完成设置")
+            .accessibilityLabel("Einstellungen schließen")
         }
     }
 
@@ -80,7 +80,7 @@ struct SettingsView: View {
 
     private var apiSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionLabel(text: "DEEPSEEK")
+            SectionLabel(text: "KI-ANBIETER")
 
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
@@ -98,7 +98,7 @@ struct SettingsView: View {
                     if let url = URL(string: "https://platform.deepseek.com/api_keys") {
                         Link(destination: url) {
                             HStack(spacing: 3) {
-                                Text("获取")
+                                Text("Öffnen")
                                 Image(systemName: "arrow.up.right")
                                     .font(.system(size: 9, weight: .bold))
                             }
@@ -132,7 +132,7 @@ struct SettingsView: View {
                             .frame(width: 36, height: 36)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(keyVisible ? "隐藏 API Key" : "显示 API Key")
+                    .accessibilityLabel(keyVisible ? "API-Schlüssel ausblenden" : "API-Schlüssel anzeigen")
                 }
                 .padding(.leading, 14)
                 .padding(.trailing, 6)
@@ -146,11 +146,11 @@ struct SettingsView: View {
                         .strokeBorder(Theme.stroke, lineWidth: 1)
                 )
 
-                PillButton(title: "保存 API Key", icon: "checkmark") {
+                PillButton(title: "API-Schlüssel speichern", icon: "checkmark") {
                     saveKey()
                 }
 
-                Text("密钥仅保存在本机钥匙串。生成纪要时，转写文本会发送到 DeepSeek。")
+                Text("Der Schlüssel wird ausschließlich im Schlüsselbund gespeichert. Bei der KI-Zusammenfassung wird das Transkript an den konfigurierten Anbieter gesendet.")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.textTertiary)
                     .lineSpacing(3)
@@ -163,22 +163,22 @@ struct SettingsView: View {
 
     private var summarySection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionLabel(text: "AI 纪要")
+            SectionLabel(text: "KI-PROTOKOLL")
 
             VStack(spacing: 0) {
                 HStack {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("自动生成纪要")
+                        Text("Automatisch zusammenfassen")
                             .font(.system(size: 15, weight: .medium))
                             .foregroundStyle(Theme.textPrimary)
-                        Text("录音结束后自动调用 DeepSeek")
+                        Text("Nach der Transkription automatisch zusammenfassen")
                             .font(.system(size: 11))
                             .foregroundStyle(Theme.textTertiary)
                     }
 
                     Spacer()
 
-                    Toggle("自动生成纪要", isOn: $settings.autoSummarize)
+                    Toggle("Automatisch zusammenfassen", isOn: $settings.autoSummarize)
                         .labelsHidden()
                         .tint(Theme.accent)
                 }
@@ -188,7 +188,7 @@ struct SettingsView: View {
                     .overlay(Theme.stroke)
 
                 HStack {
-                    Text("模型")
+                    Text("Modell")
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(Theme.textPrimary)
                     Spacer()
@@ -214,12 +214,12 @@ struct SettingsView: View {
 
     private var recognitionSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionLabel(text: "语音识别")
+            SectionLabel(text: "SPRACHERKENNUNG")
 
             VStack(alignment: .leading, spacing: 14) {
-                Picker("识别引擎", selection: $settings.engine) {
-                    Text("系统语音").tag(ASREngine.apple)
-                    Text("本地 Qwen3").tag(ASREngine.qwen)
+                Picker("Spracherkennung", selection: $settings.engine) {
+                    Text("System-Spracherkennung").tag(ASREngine.apple)
+                    Text("Lokales Qwen3").tag(ASREngine.qwen)
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
@@ -232,12 +232,12 @@ struct SettingsView: View {
                 Divider()
                     .overlay(Theme.stroke)
 
-                Text("识别语言")
+                Text("Sprache")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(Theme.textPrimary)
 
-                Picker("识别语言", selection: $settings.languageCode) {
-                    Text("中文").tag("zh-CN")
+                Picker("Sprache", selection: $settings.languageCode) {
+                    Text("Deutsch").tag("de-DE")
                     Text("English").tag("en-US")
                 }
                 .pickerStyle(.segmented)
@@ -248,17 +248,17 @@ struct SettingsView: View {
 
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("仅设备端识别")
+                        Text("Nur auf dem Gerät")
                             .font(.system(size: 15, weight: .medium))
                             .foregroundStyle(Theme.textPrimary)
-                        Text("音频不离开设备，准确率可能略低")
+                        Text("Audio verlässt das Gerät nicht. Die Genauigkeit kann etwas geringer sein.")
                             .font(.system(size: 11))
                             .foregroundStyle(Theme.textTertiary)
                     }
 
                     Spacer()
 
-                    Toggle("仅设备端识别", isOn: $settings.offlineOnly)
+                    Toggle("Nur auf dem Gerät", isOn: $settings.offlineOnly)
                         .labelsHidden()
                         .tint(Theme.accent)
                 }
@@ -270,22 +270,22 @@ struct SettingsView: View {
     private var engineDescription: String {
         if settings.engine == .qwen {
             guard LocalModelAssets.isBundled else {
-                return "当前安装包未包含本地模型，录音时会提示并建议改用系统语音。"
+                return "Diese App-Version enthält kein lokales Modell. Beim Start wird die System-Spracherkennung empfohlen."
             }
-            return "完全离线，音频不出设备。模型约 0.9GB，首次加载约 1 分钟，仅支持 iOS 18 与真机。"
+            return "Vollständig offline, Audio bleibt auf dem Gerät. Modell ca. 0,9 GB, erster Start ca. 1 Minute, nur iOS 18 und echtes Gerät."
         }
-        return "使用 Apple Speech，可按「仅设备端识别」开关切换离线与否。"
+        return "Verwendet Apple Speech. Mit „Nur auf dem Gerät“ kann offline erkannt werden."
     }
 
     // MARK: - About
 
     private var aboutSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionLabel(text: "关于")
+            SectionLabel(text: "ÜBER")
 
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
-                    Text("版本")
+                    Text("Version")
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(Theme.textPrimary)
                     Spacer()
@@ -297,7 +297,7 @@ struct SettingsView: View {
                 Divider()
                     .overlay(Theme.stroke)
 
-                Text("语音由 Apple Speech 实时转写，会议纪要由 DeepSeek 生成。音频与文字默认仅存储在本机。")
+                Text("Audio und Transkripte bleiben auf dem Gerät. Nur bei aktivierter KI-Zusammenfassung wird das Transkript an den eingestellten Anbieter gesendet.")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.textSecondary)
                     .lineSpacing(4)
@@ -306,7 +306,7 @@ struct SettingsView: View {
                     Image(systemName: "lock.shield.fill")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.success)
-                    Text("本地优先 · 隐私可控")
+                    Text("LOKAL ZUERST · DATENSCHUTZ")
                         .font(.system(size: 10, weight: .medium, design: .monospaced))
                         .tracking(0.6)
                         .foregroundStyle(Theme.textTertiary)
@@ -325,7 +325,7 @@ struct SettingsView: View {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.success)
-                Text("已保存")
+                Text("Gespeichert")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Theme.textPrimary)
             }

@@ -40,8 +40,8 @@ struct MeetingDetailView: View {
                     CapsuleSegmentedControl(
                         selection: $tab,
                         options: [
-                            (value: DetailTab.summary, label: "AI 纪要"),
-                            (value: DetailTab.transcript, label: "原文")
+                            (value: DetailTab.summary, label: "Zusammenfassung"),
+                            (value: DetailTab.transcript, label: "Transkript")
                         ]
                     )
                     .padding(.top, 2)
@@ -85,13 +85,13 @@ struct MeetingDetailView: View {
             SettingsView()
                 .environmentObject(settings)
         }
-        .alert("删除这场会议？", isPresented: $showDeleteAlert) {
-            Button("删除", role: .destructive) {
+        .alert("Besprechung löschen?", isPresented: $showDeleteAlert) {
+            Button("Löschen", role: .destructive) {
                 deleteMeeting()
             }
-            Button("取消", role: .cancel) {}
+            Button("Abbrechen", role: .cancel) {}
         } message: {
-            Text("转写、纪要与录音将被永久删除，无法恢复。")
+            Text("Transkript, Protokoll und Aufnahme werden dauerhaft gelöscht.")
         }
     }
 
@@ -110,7 +110,7 @@ struct MeetingDetailView: View {
                     .overlay(Circle().strokeBorder(Theme.stroke, lineWidth: 1))
             }
             .buttonStyle(PressableStyle())
-            .accessibilityLabel("返回")
+            .accessibilityLabel("Zurück")
 
             Spacer()
 
@@ -123,13 +123,13 @@ struct MeetingDetailView: View {
                     .overlay(Circle().strokeBorder(Theme.stroke, lineWidth: 1))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("分享纪要")
+            .accessibilityLabel("Protokoll teilen")
 
             Menu {
                 Button {
                     copyTranscript()
                 } label: {
-                    Label("复制原文", systemImage: "doc.on.doc")
+                    Label("Transkript kopieren", systemImage: "doc.on.doc")
                 }
 
                 Button {
@@ -137,7 +137,7 @@ struct MeetingDetailView: View {
                         await generateSummary()
                     }
                 } label: {
-                    Label("重新生成纪要", systemImage: "sparkles")
+                    Label("Neu zusammenfassen", systemImage: "sparkles")
                 }
                 .disabled(isGenerating)
 
@@ -146,7 +146,7 @@ struct MeetingDetailView: View {
                 Button(role: .destructive) {
                     showDeleteAlert = true
                 } label: {
-                    Label("删除会议", systemImage: "trash")
+                    Label("Besprechung löschen", systemImage: "trash")
                 }
             } label: {
                 Image(systemName: "ellipsis")
@@ -156,7 +156,7 @@ struct MeetingDetailView: View {
                     .background(Circle().fill(Theme.cardFill))
                     .overlay(Circle().strokeBorder(Theme.stroke, lineWidth: 1))
             }
-            .accessibilityLabel("更多操作")
+            .accessibilityLabel("Weitere Aktionen")
         }
     }
 
@@ -164,7 +164,7 @@ struct MeetingDetailView: View {
 
     private var titleBlock: some View {
         VStack(alignment: .leading, spacing: 8) {
-            TextField("会议标题", text: $meeting.title, axis: .vertical)
+            TextField("Titel der Besprechung", text: $meeting.title, axis: .vertical)
                 .font(.system(size: 30, weight: .bold))
                 .tracking(-0.8)
                 .foregroundStyle(Theme.textPrimary)
@@ -176,7 +176,7 @@ struct MeetingDetailView: View {
                     try? modelContext.save()
                 }
 
-            Text("点击标题即可编辑")
+            Text("Tippen Sie auf den Titel, um ihn zu bearbeiten")
                 .font(.system(size: 10, weight: .medium, design: .monospaced))
                 .tracking(0.5)
                 .foregroundStyle(Theme.textTertiary)
@@ -188,7 +188,7 @@ struct MeetingDetailView: View {
         HStack(spacing: 14) {
             Label(AppFormat.meetingDate.string(from: meeting.createdAt), systemImage: "calendar")
             Label(AppFormat.duration(meeting.duration), systemImage: "clock")
-            Label("\(meeting.transcript.count) 字", systemImage: "text.alignleft")
+            Label(AppFormat.characterCount(meeting.transcript.count), systemImage: "text.alignleft")
         }
         .font(.system(size: 10, weight: .medium, design: .monospaced))
         .foregroundStyle(Theme.textTertiary)
@@ -212,7 +212,7 @@ struct MeetingDetailView: View {
                     .overlay(Circle().strokeBorder(Theme.stroke, lineWidth: 1))
             }
             .buttonStyle(PressableStyle())
-            .accessibilityLabel(audio.isPlaying ? "暂停播放" : "播放录音")
+            .accessibilityLabel(audio.isPlaying ? "Wiedergabe pausieren" : "Aufnahme abspielen")
 
             VStack(alignment: .leading, spacing: 6) {
                 GeometryReader { geometry in
@@ -277,19 +277,19 @@ struct MeetingDetailView: View {
     private var transcriptSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                SectionLabel(text: "原始转写")
+                SectionLabel(text: "Transkript")
 
                 Spacer()
 
                 Button {
                     copyTranscript()
                 } label: {
-                    Label("复制", systemImage: "doc.on.doc")
+                    Label("Kopieren", systemImage: "doc.on.doc")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(Theme.textSecondary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("复制转写原文")
+                .accessibilityLabel("Transkript kopieren")
             }
 
             if meeting.segments.isEmpty {
@@ -314,7 +314,7 @@ struct MeetingDetailView: View {
     @ViewBuilder
     private var copiedToast: some View {
         if showCopied {
-            Text("已复制到剪贴板")
+            Text("In die Zwischenablage kopiert")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Theme.textPrimary)
                 .padding(.horizontal, 16)
@@ -334,13 +334,13 @@ struct MeetingDetailView: View {
 
         let key = settings.apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !key.isEmpty else {
-            summaryError = "请先在设置中填写 DeepSeek API Key。"
+            summaryError = "Bitte hinterlegen Sie zuerst einen API-Schlüssel in den Einstellungen."
             return
         }
 
         let transcript = meeting.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !transcript.isEmpty else {
-            summaryError = "这场会议还没有转写内容。"
+            summaryError = "Für diese Besprechung liegt noch kein Transkript vor."
             return
         }
 
@@ -389,31 +389,31 @@ struct MeetingDetailView: View {
 
         lines.append("# \(meeting.title)")
         lines.append("")
-        lines.append("时间：\(AppFormat.meetingDate.string(from: meeting.createdAt)) · 时长：\(AppFormat.duration(meeting.duration))")
+        lines.append("Datum: \(AppFormat.meetingDate.string(from: meeting.createdAt)) · Dauer: \(AppFormat.duration(meeting.duration))")
         lines.append("")
 
         if let summary = meeting.summary, !summary.isEmpty {
             if !summary.overview.isEmpty {
-                lines.append("## 会议摘要")
+                lines.append("## Zusammenfassung")
                 lines.append(summary.overview)
                 lines.append("")
             }
 
             if !summary.keyPoints.isEmpty {
-                lines.append("## 关键要点")
+                lines.append("## Kernpunkte")
                 lines.append(contentsOf: summary.keyPoints.map { "- \($0)" })
                 lines.append("")
             }
 
             if !summary.actionItems.isEmpty {
-                lines.append("## 待办事项")
+                lines.append("## Aufgaben")
                 let items = summary.actionItems.map { item -> String in
                     var parts = [item.task]
                     if let owner = item.owner, !owner.isEmpty {
-                        parts.append("负责人：\(owner)")
+                        parts.append("Verantwortlich: \(owner)")
                     }
                     if let deadline = item.deadline, !deadline.isEmpty {
-                        parts.append("截止：\(deadline)")
+                        parts.append("Frist: \(deadline)")
                     }
                     return "- " + parts.joined(separator: " · ")
                 }
@@ -422,13 +422,13 @@ struct MeetingDetailView: View {
             }
 
             if !summary.decisions.isEmpty {
-                lines.append("## 会议决议")
+                lines.append("## Beschlüsse")
                 lines.append(contentsOf: summary.decisions.map { "- \($0)" })
                 lines.append("")
             }
         }
 
-        lines.append("## 转写原文")
+        lines.append("## Transkript")
         lines.append(meeting.transcript)
 
         return lines.joined(separator: "\n")

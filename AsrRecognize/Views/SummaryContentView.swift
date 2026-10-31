@@ -33,7 +33,7 @@ struct SummaryContentView: View {
             summaryHeader
 
             if !summary.overview.isEmpty {
-                sectionCard(title: "会议摘要", icon: "text.quote") {
+                sectionCard(title: "Zusammenfassung", icon: "text.quote") {
                     Text(summary.overview)
                         .font(.system(size: 15))
                         .foregroundStyle(Theme.textPrimary.opacity(0.9))
@@ -43,7 +43,7 @@ struct SummaryContentView: View {
             }
 
             if !summary.keyPoints.isEmpty {
-                sectionCard(title: "关键要点", icon: "list.bullet") {
+                sectionCard(title: "Kernpunkte", icon: "list.bullet") {
                     VStack(alignment: .leading, spacing: 12) {
                         ForEach(Array(summary.keyPoints.enumerated()), id: \.offset) { index, point in
                             HStack(alignment: .top, spacing: 10) {
@@ -65,7 +65,7 @@ struct SummaryContentView: View {
             }
 
             if !summary.actionItems.isEmpty {
-                sectionCard(title: "待办事项", icon: "checklist") {
+                sectionCard(title: "Aufgaben", icon: "checklist") {
                     VStack(alignment: .leading, spacing: 10) {
                         ForEach(Array(summary.actionItems.enumerated()), id: \.offset) { _, item in
                             actionItemRow(item)
@@ -75,7 +75,7 @@ struct SummaryContentView: View {
             }
 
             if !summary.decisions.isEmpty {
-                sectionCard(title: "会议决议", icon: "checkmark.seal") {
+                sectionCard(title: "Beschlüsse", icon: "checkmark.seal") {
                     VStack(alignment: .leading, spacing: 12) {
                         ForEach(Array(summary.decisions.enumerated()), id: \.offset) { _, decision in
                             HStack(alignment: .top, spacing: 10) {
@@ -96,7 +96,7 @@ struct SummaryContentView: View {
             }
 
             if truncated {
-                Text("转写内容较长，本次仅分析前 2 万字。")
+                Text("Das Transkript wurde für die Zusammenfassung gekürzt.")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.textTertiary)
                     .padding(.horizontal, 2)
@@ -116,10 +116,10 @@ struct SummaryContentView: View {
             }
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("AI 会议纪要")
+                Text("KI-Protokoll")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Theme.textPrimary)
-                Text("由 DeepSeek 提炼")
+                Text("Erstellt mit DeepSeek")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.textTertiary)
             }
@@ -152,10 +152,10 @@ struct SummaryContentView: View {
             if !owner.isEmpty || !deadline.isEmpty {
                 HStack(spacing: 8) {
                     if !owner.isEmpty {
-                        metaChip(text: "负责人 · \(owner)")
+                        metaChip(text: "Verantwortlich · \(owner)")
                     }
                     if !deadline.isEmpty {
-                        metaChip(text: "截止 · \(deadline)")
+                        metaChip(text: "Frist · \(deadline)")
                     }
                 }
                 .padding(.leading, 23)
@@ -211,7 +211,7 @@ struct SummaryContentView: View {
             HStack(spacing: 10) {
                 ProgressView()
                     .tint(Theme.accent)
-                Text("AI 正在整理纪要…")
+                Text("Die KI erstellt das Protokoll…")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(Theme.textSecondary)
             }
@@ -223,7 +223,7 @@ struct SummaryContentView: View {
                 SkeletonBar(width: 160, height: 11)
             }
 
-            Text("通常需要 10–30 秒")
+            Text("Meist dauert das 10–30 Sekunden.")
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.textTertiary)
         }
@@ -237,7 +237,7 @@ struct SummaryContentView: View {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Theme.warning)
-                Text("纪要生成失败")
+                Text("Protokoll konnte nicht erstellt werden")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Theme.textPrimary)
             }
@@ -249,8 +249,8 @@ struct SummaryContentView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(spacing: 10) {
-                PillButton(title: "重试", icon: "arrow.clockwise", fullWidth: false, action: onGenerate)
-                PillButton(title: "检查设置", icon: "gearshape", kind: .secondary, fullWidth: false, action: onOpenSettings)
+                PillButton(title: "Erneut versuchen", icon: "arrow.clockwise", fullWidth: false, action: onGenerate)
+                PillButton(title: "Einstellungen prüfen", icon: "gearshape", kind: .secondary, fullWidth: false, action: onOpenSettings)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -270,22 +270,22 @@ struct SummaryContentView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("连接 DeepSeek")
+                    Text("KI-Protokoll einrichten")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(Theme.textPrimary)
-                    Text("开启 AI 纪要")
+                    Text("Automatische Zusammenfassung aktivieren")
                         .font(.system(size: 12))
                         .foregroundStyle(Theme.textTertiary)
                 }
             }
 
-            Text("填写 API Key 后，转写文本会发送给 DeepSeek，自动提炼摘要、关键要点与待办事项。")
+            Text("Hinterlegen Sie einen API-Schlüssel. Das Transkript wird dann an den eingestellten Anbieter gesendet und zu einem Protokoll zusammengefasst.")
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.textSecondary)
                 .lineSpacing(4)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            PillButton(title: "配置 API Key", icon: "gearshape", action: onOpenSettings)
+            PillButton(title: "API-Schlüssel hinterlegen", icon: "gearshape", action: onOpenSettings)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .glassCard()
@@ -304,22 +304,22 @@ struct SummaryContentView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("生成 AI 会议纪要")
+                    Text("KI-Protokoll erstellen")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(Theme.textPrimary)
-                    Text("摘要 · 要点 · 待办 · 决议")
+                    Text("Zusammenfassung · Kernpunkte · Aufgaben · Beschlüsse")
                         .font(.system(size: 12))
                         .foregroundStyle(Theme.textTertiary)
                 }
             }
 
-            Text("基于本次会议的转写内容，由 DeepSeek 提炼结构化纪要。")
+            Text("Erstellt aus dem Transkript ein strukturiertes Protokoll.")
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.textSecondary)
                 .lineSpacing(4)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            PillButton(title: "生成纪要", icon: "sparkles", action: onGenerate)
+            PillButton(title: "Protokoll erstellen", icon: "sparkles", action: onGenerate)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .glassCard()

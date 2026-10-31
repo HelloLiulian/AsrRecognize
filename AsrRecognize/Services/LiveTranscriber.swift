@@ -7,7 +7,7 @@ enum TranscriberError: LocalizedError {
     case noInput
 
     var errorDescription: String? {
-        "未检测到可用的麦克风输入"
+        "Kein Mikrofoneingang gefunden."
     }
 }
 
@@ -62,25 +62,25 @@ final class LiveTranscriber: ObservableObject {
         let speechGranted = await Self.requestSpeechAuthorization()
         guard !Task.isCancelled else { return }
         guard speechGranted else {
-            errorMessage = "未获得语音识别权限。请前往「设置 › 隐私与安全性 › 语音识别」开启后重试。"
+            errorMessage = "Kein Zugriff auf die Spracherkennung. Bitte in den iOS-Einstellungen unter „Datenschutz & Sicherheit › Spracherkennung“ aktivieren."
             return
         }
 
         let micGranted = await Self.requestMicrophonePermission()
         guard !Task.isCancelled else { return }
         guard micGranted else {
-            errorMessage = "未获得麦克风权限。请前往「设置 › 隐私与安全性 › 麦克风」开启后重试。"
+            errorMessage = "Kein Zugriff auf das Mikrofon. Bitte in den iOS-Einstellungen unter „Datenschutz & Sicherheit › Mikrofon“ aktivieren."
             return
         }
 
         guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: language)) else {
-            errorMessage = "当前语言暂不支持语音识别。"
+            errorMessage = "Für diese Sprache ist keine Spracherkennung verfügbar."
             return
         }
 
         let wantsOffline = offlineOnly && recognizer.supportsOnDeviceRecognition
         guard recognizer.isAvailable || wantsOffline else {
-            errorMessage = "语音识别服务暂不可用，请检查网络后重试。"
+            errorMessage = "Die Spracherkennung ist derzeit nicht verfügbar. Bitte prüfen Sie Ihre Internetverbindung."
             return
         }
 
@@ -147,7 +147,7 @@ final class LiveTranscriber: ObservableObject {
             startTimers()
         } catch {
             cleanupAfterFailure()
-            errorMessage = "无法开始录音：\(error.localizedDescription)"
+            errorMessage = "Aufnahme konnte nicht gestartet werden: \(error.localizedDescription)"
         }
     }
 
@@ -179,7 +179,7 @@ final class LiveTranscriber: ObservableObject {
             wasInterrupted = false
             startRecognitionCycle()
         } catch {
-            errorMessage = "无法恢复录音：\(error.localizedDescription)"
+            errorMessage = "Aufnahme konnte nicht fortgesetzt werden: \(error.localizedDescription)"
             stop()
         }
     }
@@ -314,7 +314,7 @@ final class LiveTranscriber: ObservableObject {
         let limit = isBenign ? 8 : 2
 
         if restartFailures > limit {
-            errorMessage = "语音识别中断：\(error.localizedDescription)"
+            errorMessage = "Spracherkennung unterbrochen: \(error.localizedDescription)"
             stop()
             return
         }

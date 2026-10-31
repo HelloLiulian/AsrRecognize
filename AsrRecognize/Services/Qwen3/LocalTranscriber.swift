@@ -4,7 +4,7 @@ import Foundation
 import SwiftUI
 import UIKit
 
-/// 本地 Qwen3-ASR 录音会话：麦克风采集、能量 VAD 分段、串行识别、文本拼接。
+/// Local Qwen3-ASR recording session: microphone capture, energy-based VAD segmentation, serial recognition, text assembly.
 @MainActor
 final class LocalTranscriber: ObservableObject {
     @Published private(set) var isRecording = false
@@ -20,7 +20,7 @@ final class LocalTranscriber: ObservableObject {
     @Published private(set) var isPrepared = false
     @Published private(set) var isDraining = false
     @Published private(set) var loadFraction: Double = 0
-    @Published private(set) var statusText = "本地模型未加载"
+    @Published private(set) var statusText = "Lokales Modell nicht geladen"
 
     private let engine: Qwen3CoreMLEngine
     private let audioEngine = AVAudioEngine()
@@ -83,7 +83,7 @@ final class LocalTranscriber: ObservableObject {
             }
         }
         guard micOK else {
-            errorMessage = "未获得麦克风权限。请前往「设置 › 隐私与安全性 › 麦克风」开启后重试。"
+            errorMessage = "Kein Zugriff auf das Mikrofon. Bitte in den iOS-Einstellungen unter „Datenschutz & Sicherheit › Mikrofon“ aktivieren."
             return
         }
 
@@ -91,19 +91,19 @@ final class LocalTranscriber: ObservableObject {
             try startCapture()
         } catch {
             cleanupAfterFailedStart()
-            errorMessage = "无法开始录音：\(error.localizedDescription)"
+            errorMessage = "Aufnahme konnte nicht gestartet werden: \(error.localizedDescription)"
         }
     }
 
     func prepareIfNeeded() async {
         guard !isPrepared else { return }
         guard LocalModelAssets.isBundled else {
-            statusText = "模型未打包"
-            errorMessage = "当前安装包里没有本地 Qwen3 模型，请改用系统语音识别。"
+            statusText = "Modell nicht enthalten"
+            errorMessage = "In dieser App-Version ist kein lokales Qwen3-Modell enthalten. Bitte verwenden Sie die System-Spracherkennung."
             return
         }
         loadFraction = 0
-        statusText = "首次加载模型可能较慢…"
+        statusText = "Der erste Modellstart kann etwas dauern…"
         do {
             try await engine.prepare { [weak self] fraction, message in
                 Task { @MainActor in
@@ -114,10 +114,10 @@ final class LocalTranscriber: ObservableObject {
             }
             isPrepared = true
             loadFraction = 1
-            statusText = "模型就绪"
+            statusText = "Modell bereit"
         } catch {
-            statusText = "模型不可用"
-            errorMessage = "本地模型加载失败：\(error.localizedDescription)"
+            statusText = "Modell nicht verfügbar"
+            errorMessage = "Lokales Modell konnte nicht geladen werden: \(error.localizedDescription)"
         }
     }
 
@@ -148,14 +148,14 @@ final class LocalTranscriber: ObservableObject {
             isPaused = false
             sessionStartedAt = Date()
         } catch {
-            errorMessage = "无法恢复录音：\(error.localizedDescription)"
+            errorMessage = "Aufnahme konnte nicht fortgesetzt werden: \(error.localizedDescription)"
             stopImmediately()
         }
     }
 
     // MARK: - Stop
 
-    /// 停止录音并等待队列清空；若队列曾溢出，从录音文件重建全文。
+    /// Stops recording and waits for the queue to drain; if the queue overflowed, rebuilds the transcript from the recording file.
     func stopAndFinish() async {
         guard isRecording else { return }
         isDraining = true
@@ -180,7 +180,7 @@ final class LocalTranscriber: ObservableObject {
         isDraining = false
     }
 
-    /// 立即停止，不等待剩余队列（取消、退场、出错时使用）。
+    /// Stops immediately without waiting for the remaining queue (used on cancel, dismissal, or error).
     func stopImmediately() {
         guard isRecording else { return }
         stopCapture()
@@ -218,7 +218,7 @@ final class LocalTranscriber: ObservableObject {
             throw NSError(
                 domain: "LocalTranscriber",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "没有检测到可用的麦克风输入"]
+                userInfo: [NSLocalizedDescriptionKey: "Kein Mikrofoneingang gefunden."]
             )
         }
 
@@ -329,7 +329,7 @@ final class LocalTranscriber: ObservableObject {
                 } catch TranscriptionEngineError.emptyResult {
                     continue
                 } catch {
-                    self?.errorMessage = "识别失败：\(error.localizedDescription)"
+                    self?.errorMessage = "Erkennung fehlgeschlagen: \(error.localizedDescription)"
                 }
             }
         }
@@ -366,7 +366,7 @@ final class LocalTranscriber: ObservableObject {
         Task {
             await engine.unload()
             isPrepared = false
-            statusText = "内存紧张，模型已释放"
+            statusText = "Speicher knapp – Modell wurde entladen."
         }
     }
 
@@ -443,7 +443,7 @@ final class LocalTranscriber: ObservableObject {
     }
 }
 
-/// 音频线程与主线程共享的溢出标志。
+/// Overflow flag shared between the audio thread and the main thread.
 final class FlagBox: @unchecked Sendable {
     private let lock = NSLock()
     private var value = false

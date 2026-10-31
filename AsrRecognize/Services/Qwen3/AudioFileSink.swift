@@ -1,6 +1,6 @@
 import AVFoundation
 
-/// 录音线程专用的写文件封装。
+/// File-writing wrapper dedicated to the recording thread.
 final class AudioFileSink: @unchecked Sendable {
     private var file: AVAudioFile?
 

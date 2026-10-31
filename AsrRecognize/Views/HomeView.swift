@@ -9,6 +9,7 @@ struct HomeView: View {
     @State private var searchText = ""
     @State private var showRecorder = false
     @State private var showSettings = false
+    @State private var showImporter = false
     @State private var pendingDeletion: Meeting?
 
     private var filteredMeetings: [Meeting] {
@@ -28,11 +29,7 @@ struct HomeView: View {
 
     private var weekDurationText: String {
         let total = weekMeetings.reduce(0) { $0 + $1.duration }
-        let minutes = Int(total / 60)
-        if minutes >= 60 {
-            return String(format: "%dh %02dm", minutes / 60, minutes % 60)
-        }
-        return "\(minutes)m"
+        return AppFormat.duration(total)
     }
 
     private var deleteBinding: Binding<Bool> {
@@ -76,15 +73,15 @@ struct HomeView: View {
                 RecordingView()
                     .environmentObject(settings)
             }
-            .alert("删除这场会议？", isPresented: deleteBinding, presenting: pendingDeletion) { meeting in
-                Button("删除", role: .destructive) {
+            .alert("Besprechung löschen?", isPresented: deleteBinding, presenting: pendingDeletion) { meeting in
+                Button("Löschen", role: .destructive) {
                     delete(meeting)
                 }
-                Button("取消", role: .cancel) {
+                Button("Abbrechen", role: .cancel) {
                     pendingDeletion = nil
                 }
             } message: { meeting in
-                Text("「\(meeting.title)」的转写、纪要和录音将被永久删除。")
+                Text("Transkript, Protokoll und Aufnahme von „\(meeting.title)“ werden dauerhaft gelöscht.")
             }
         }
     }
@@ -113,10 +110,10 @@ struct HomeView: View {
                         .overlay(Circle().strokeBorder(Theme.stroke, lineWidth: 1))
                 }
                 .buttonStyle(PressableStyle())
-                .accessibilityLabel("设置")
+                .accessibilityLabel("Einstellungen")
             }
 
-            Text("会议纪要")
+            Text("Protokolle")
                 .font(.system(size: 38, weight: .bold))
                 .tracking(-1.2)
                 .foregroundStyle(Theme.textPrimary)
@@ -124,7 +121,9 @@ struct HomeView: View {
             HStack(spacing: 8) {
                 Text(AppFormat.heroDate.string(from: Date()))
                 Text("·")
-                Text("\(meetings.count) 场记录")
+                Text(AppFormat.weekLabel(Date()))
+                Text("·")
+                Text("\(meetings.count) Besprechungen")
             }
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(Theme.textSecondary)
@@ -139,7 +138,7 @@ struct HomeView: View {
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(Theme.textTertiary)
 
-            TextField("搜索会议、转写文字…", text: $searchText)
+            TextField("Protokolle und Transkripte durchsuchen…", text: $searchText)
                 .font(.system(size: 15))
                 .foregroundStyle(Theme.textPrimary)
                 .tint(Theme.accent)
@@ -156,7 +155,7 @@ struct HomeView: View {
                         .frame(width: 28, height: 28)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("清除搜索")
+                .accessibilityLabel("Suche löschen")
             }
         }
         .padding(.horizontal, 16)
@@ -175,11 +174,11 @@ struct HomeView: View {
 
     private var statsStrip: some View {
         HStack(spacing: 0) {
-            statItem(value: "\(weekMeetings.count)", label: "本周会议")
+            statItem(value: "\(weekMeetings.count)", label: "Diese Woche")
             statDivider
-            statItem(value: weekDurationText, label: "本周时长")
+            statItem(value: weekDurationText, label: "Dauer diese Woche")
             statDivider
-            statItem(value: "\(meetings.count)", label: "全部记录")
+            statItem(value: "\(meetings.count)", label: "Gesamt")
         }
         .padding(.vertical, 14)
         .background(
@@ -218,7 +217,7 @@ struct HomeView: View {
     private var listSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                SectionLabel(text: searchText.trimmingCharacters(in: .whitespaces).isEmpty ? "最近会议" : "搜索结果")
+                SectionLabel(text: searchText.trimmingCharacters(in: .whitespaces).isEmpty ? "Letzte Besprechungen" : "Suchergebnisse")
                 Spacer()
                 if !filteredMeetings.isEmpty {
                     Text("\(filteredMeetings.count)")
@@ -230,10 +229,10 @@ struct HomeView: View {
             if filteredMeetings.isEmpty {
                 EmptyStateView(
                     icon: meetings.isEmpty ? "waveform" : "magnifyingglass",
-                    title: meetings.isEmpty ? "还没有会议记录" : "没有找到相关内容",
+                    title: meetings.isEmpty ? "Noch keine Protokolle" : "Keine Treffer",
                     message: meetings.isEmpty
-                        ? "点击下方按钮开始第一场录音，\n语音会实时转写为文字。"
-                        : "换一个关键词试试，或清空搜索。"
+                        ? "Tippen Sie unten auf „Aufnahme starten“, um Ihre erste Besprechung aufzunehmen."
+                        : "Versuchen Sie einen anderen Begriff oder leeren Sie die Suche."
                 )
             } else {
                 LazyVStack(spacing: 12) {
@@ -248,7 +247,7 @@ struct HomeView: View {
                             Button(role: .destructive) {
                                 pendingDeletion = meeting
                             } label: {
-                                Label("删除", systemImage: "trash")
+                                Label("Löschen", systemImage: "trash")
                             }
                         }
                     }
@@ -263,6 +262,25 @@ struct HomeView: View {
         VStack(spacing: 8) {
             Button {
                 Haptics.tap()
+                showImporter = true
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "doc.badge.plus")
+                        .font(.system(size: 15, weight: .semibold))
+                    Text("Audiodatei importieren")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .foregroundStyle(Theme.textSecondary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(Capsule().fill(Theme.cardFill))
+                .overlay(Capsule().strokeBorder(Theme.stroke, lineWidth: 1))
+            }
+            .buttonStyle(PressableStyle())
+            .accessibilityLabel("Audiodatei importieren")
+
+            Button {
+                Haptics.tap()
                 showRecorder = true
             } label: {
                 HStack(spacing: 12) {
@@ -275,7 +293,7 @@ struct HomeView: View {
                             .foregroundStyle(.white)
                     }
 
-                    Text("开始记录")
+                    Text("Aufnahme starten")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.white)
                 }
@@ -294,9 +312,9 @@ struct HomeView: View {
                 .shadow(color: Theme.record.opacity(0.32), radius: 24, y: 8)
             }
             .buttonStyle(PressableStyle())
-            .accessibilityLabel("开始记录会议")
+            .accessibilityLabel("Aufnahme starten")
 
-            Text("音频仅保存在本机 · \(settings.languageTitle)实时转写")
+            Text("Audio bleibt auf dem Gerät · Live-Transkript (\(settings.languageTitle))")
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.textTertiary)
         }
@@ -363,10 +381,10 @@ struct MeetingCardView: View {
             HStack(spacing: 14) {
                 Label(AppFormat.duration(meeting.duration), systemImage: "clock")
                 if meeting.audioURL != nil {
-                    Label("音频", systemImage: "waveform")
+                    Label("Audio", systemImage: "waveform")
                 }
                 Spacer()
-                Text("\(meeting.transcript.count) 字")
+                Text(AppFormat.characterCount(meeting.transcript.count))
             }
             .font(.system(size: 10, weight: .medium, design: .monospaced))
             .foregroundStyle(Theme.textTertiary)
