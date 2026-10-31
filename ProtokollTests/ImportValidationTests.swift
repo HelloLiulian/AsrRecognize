@@ -19,7 +19,29 @@ final class ImportValidationTests: XCTestCase {
     }
 
     func testRejectsInvalidDuration() {
-        XCTAssertThrowsError(try ImportValidation.validate(duration: 0, fileSize: 1_000))
+        XCTAssertThrowsError(try ImportValidation.validate(duration: 0, fileSize: 1_000)) { error in
+            XCTAssertEqual((error as? ImportValidation.Failure), .invalid)
+        }
+    }
+
+    func testRejectsNaNDuration() {
+        XCTAssertThrowsError(try ImportValidation.validate(duration: .nan, fileSize: 1_000)) { error in
+            XCTAssertEqual((error as? ImportValidation.Failure), .invalid)
+        }
+    }
+
+    func testRejectsNegativeDuration() {
+        XCTAssertThrowsError(try ImportValidation.validate(duration: -1, fileSize: 1_000)) { error in
+            XCTAssertEqual((error as? ImportValidation.Failure), .invalid)
+        }
+    }
+
+    func testAcceptsExactMaxFileSize() {
+        XCTAssertNoThrow(try ImportValidation.validate(duration: 60, fileSize: 1_500_000_000))
+    }
+
+    func testAcceptsZeroByteFile() {
+        XCTAssertNoThrow(try ImportValidation.validate(duration: 60, fileSize: 0))
     }
 
     func testRejectsInsufficientSpace() {
@@ -32,5 +54,9 @@ final class ImportValidationTests: XCTestCase {
 
     func testMissingSpaceInformationIsAccepted() {
         XCTAssertNoThrow(try ImportValidation.validateAvailableSpace(required: 2_000_000_000, available: nil))
+    }
+
+    func testAcceptsExactAvailableSpace() {
+        XCTAssertNoThrow(try ImportValidation.validateAvailableSpace(required: 1_000_000, available: 1_000_000))
     }
 }
