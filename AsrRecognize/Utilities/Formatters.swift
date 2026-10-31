@@ -1,28 +1,27 @@
 import Foundation
 
 enum AppFormat {
-    static let zhLocale = Locale(identifier: "zh_CN")
+    static let locale = Locale(identifier: "de_DE")
 
-    static let meetingDate: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = zhLocale
-        formatter.dateFormat = "M月d日 HH:mm"
-        return formatter
+    static let calendar: Calendar = {
+        var calendar = Calendar(identifier: .iso8601)
+        calendar.locale = locale
+        calendar.timeZone = .current
+        return calendar
     }()
 
-    static let dayOnly: DateFormatter = {
+    private static func makeFormatter(_ format: String) -> DateFormatter {
         let formatter = DateFormatter()
-        formatter.locale = zhLocale
-        formatter.dateFormat = "M月d日"
+        formatter.locale = locale
+        formatter.timeZone = .current
+        formatter.dateFormat = format
         return formatter
-    }()
+    }
 
-    static let heroDate: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = zhLocale
-        formatter.dateFormat = "M月d日 · EEEE"
-        return formatter
-    }()
+    static let meetingDate = makeFormatter("dd.MM.yyyy, HH:mm")
+    static let dayOnly = makeFormatter("dd.MM.yyyy")
+    static let heroDate = makeFormatter("EEEE, d. MMMM")
+    static let fileStamp = makeFormatter("yyyy-MM-dd")
 
     static func clock(_ time: TimeInterval) -> String {
         let total = max(0, Int(time.rounded()))
@@ -38,17 +37,32 @@ enum AppFormat {
     static func duration(_ time: TimeInterval) -> String {
         let total = max(0, Int(time.rounded()))
         if total < 60 {
-            return "\(total) 秒"
+            return "\(total) Sek."
         }
         let hours = total / 3600
         let minutes = (total % 3600) / 60
-        if hours > 0 {
-            return "\(hours) 小时 \(minutes) 分"
+        if hours > 0, minutes > 0 {
+            return "\(hours) Std. \(minutes) Min."
         }
-        return "\(minutes) 分钟"
+        if hours > 0 {
+            return "\(hours) Std."
+        }
+        return "\(minutes) Min."
+    }
+
+    static func characterCount(_ count: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.locale = locale
+        formatter.numberStyle = .decimal
+        let number = formatter.string(from: NSNumber(value: count)) ?? "\(count)"
+        return "\(number) Zeichen"
+    }
+
+    static func weekLabel(_ date: Date) -> String {
+        "KW \(calendar.component(.weekOfYear, from: date))"
     }
 
     static func defaultTitle(for date: Date) -> String {
-        "\(dayOnly.string(from: date)) 会议"
+        "Protokoll vom \(dayOnly.string(from: date))"
     }
 }
