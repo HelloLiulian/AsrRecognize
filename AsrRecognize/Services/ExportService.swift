@@ -9,7 +9,7 @@ struct ExportPayload {
 }
 
 enum FilenameSanitizer {
-    static func sanitize(_ raw: String, fallback: String = "Protokoll") -> String {
+    static func sanitize(_ raw: String, fallback: String = "Protokoll", maxBytes: Int = 180) -> String {
         var value = raw.replacingOccurrences(
             of: "[/\\\\:*?\"<>|\\n\\r\\t]",
             with: "-",
@@ -20,8 +20,17 @@ enum FilenameSanitizer {
         value = value.trimmingCharacters(in: CharacterSet(charactersIn: ".-_ "))
         if value.count > 60 {
             value = String(value.prefix(60))
-            value = value.trimmingCharacters(in: CharacterSet(charactersIn: ".-_ "))
         }
+        if value.utf8.count > maxBytes {
+            var truncated = ""
+            for character in value {
+                let next = String(character)
+                if truncated.utf8.count + next.utf8.count > maxBytes { break }
+                truncated.append(character)
+            }
+            value = truncated
+        }
+        value = value.trimmingCharacters(in: CharacterSet(charactersIn: ".-_ "))
         return value.isEmpty ? fallback : value
     }
 }
@@ -74,7 +83,10 @@ enum ExportService {
 
     static func writeText(for payload: ExportPayload) throws -> URL {
         let directory = try exportDirectory()
-        let name = "Protokoll_\(FilenameSanitizer.sanitize(payload.title))_\(AppFormat.fileStamp.string(from: payload.date)).txt"
+        let stamp = AppFormat.fileStamp.string(from: payload.date)
+        // Empty titles fall back to the "Protokoll_" prefix instead of a duplicate segment.
+        let title = FilenameSanitizer.sanitize(payload.title, fallback: "")
+        let name = title.isEmpty ? "Protokoll_\(stamp).txt" : "Protokoll_\(title)_\(stamp).txt"
         let url = directory.appendingPathComponent(name)
         try text(for: payload).write(to: url, atomically: true, encoding: .utf8)
         return url

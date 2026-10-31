@@ -418,18 +418,21 @@ struct MeetingDetailView: View {
         return (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int64) ?? 0
     }
 
+    private var exportPayload: ExportPayload {
+        ExportPayload(
+            title: meeting.title,
+            date: meeting.createdAt,
+            duration: meeting.duration,
+            transcript: meeting.transcript,
+            summary: meeting.summary
+        )
+    }
+
     private func exportText() {
         do {
-            let payload = ExportPayload(
-                title: meeting.title,
-                date: meeting.createdAt,
-                duration: meeting.duration,
-                transcript: meeting.transcript,
-                summary: meeting.summary
-            )
-            exportItem = ExportItem(url: try ExportService.writeText(for: payload))
+            exportItem = ExportItem(url: try ExportService.writeText(for: exportPayload))
         } catch {
-            exportError = error.localizedDescription
+            exportError = exportFailureMessage(error)
         }
     }
 
@@ -438,8 +441,12 @@ struct MeetingDetailView: View {
         do {
             exportItem = ExportItem(url: try ExportService.prepareAudio(source: source, title: meeting.title))
         } catch {
-            exportError = error.localizedDescription
+            exportError = exportFailureMessage(error)
         }
+    }
+
+    private func exportFailureMessage(_ error: Error) -> String {
+        "Die Datei konnte nicht exportiert werden. Bitte versuchen Sie es erneut."
     }
 
     private func deleteMeeting() {
@@ -455,52 +462,6 @@ struct MeetingDetailView: View {
     }
 
     private var shareText: String {
-        var lines: [String] = []
-
-        lines.append("# \(meeting.title)")
-        lines.append("")
-        lines.append("Datum: \(AppFormat.meetingDate.string(from: meeting.createdAt)) · Dauer: \(AppFormat.duration(meeting.duration))")
-        lines.append("")
-
-        if let summary = meeting.summary, !summary.isEmpty {
-            if !summary.overview.isEmpty {
-                lines.append("## Zusammenfassung")
-                lines.append(summary.overview)
-                lines.append("")
-            }
-
-            if !summary.keyPoints.isEmpty {
-                lines.append("## Kernpunkte")
-                lines.append(contentsOf: summary.keyPoints.map { "- \($0)" })
-                lines.append("")
-            }
-
-            if !summary.actionItems.isEmpty {
-                lines.append("## Aufgaben")
-                let items = summary.actionItems.map { item -> String in
-                    var parts = [item.task]
-                    if let owner = item.owner, !owner.isEmpty {
-                        parts.append("Verantwortlich: \(owner)")
-                    }
-                    if let deadline = item.deadline, !deadline.isEmpty {
-                        parts.append("Frist: \(deadline)")
-                    }
-                    return "- " + parts.joined(separator: " · ")
-                }
-                lines.append(contentsOf: items)
-                lines.append("")
-            }
-
-            if !summary.decisions.isEmpty {
-                lines.append("## Beschlüsse")
-                lines.append(contentsOf: summary.decisions.map { "- \($0)" })
-                lines.append("")
-            }
-        }
-
-        lines.append("## Transkript")
-        lines.append(meeting.transcript)
-
-        return lines.joined(separator: "\n")
+        ExportService.text(for: exportPayload)
     }
 }
