@@ -29,6 +29,10 @@ final class AppFormatTests: XCTestCase {
 
     func testWeekLabelIsISOWeek() {
         XCTAssertEqual(AppFormat.weekLabel(date(2026, 10, 31)), "KW 44")
+        // Year boundaries: ISO weeks, not Gregorian week-of-year.
+        XCTAssertEqual(AppFormat.weekLabel(date(2027, 1, 1)), "KW 53")
+        XCTAssertEqual(AppFormat.weekLabel(date(2026, 12, 28)), "KW 53")
+        XCTAssertEqual(AppFormat.weekLabel(date(2025, 12, 29)), "KW 1")
     }
 
     func testDefaultTitle() {

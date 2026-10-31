@@ -3,17 +3,17 @@ import Foundation
 enum AppFormat {
     static let locale = Locale(identifier: "de_DE")
 
-    static let calendar: Calendar = {
+    private static let calendar: Calendar = {
         var calendar = Calendar(identifier: .iso8601)
         calendar.locale = locale
-        calendar.timeZone = .current
+        calendar.timeZone = .autoupdatingCurrent
         return calendar
     }()
 
     private static func makeFormatter(_ format: String) -> DateFormatter {
         let formatter = DateFormatter()
         formatter.locale = locale
-        formatter.timeZone = .current
+        formatter.timeZone = .autoupdatingCurrent
         formatter.dateFormat = format
         return formatter
     }
@@ -50,11 +50,15 @@ enum AppFormat {
         return "\(minutes) Min."
     }
 
-    static func characterCount(_ count: Int) -> String {
+    private static let characterFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.locale = locale
         formatter.numberStyle = .decimal
-        let number = formatter.string(from: NSNumber(value: count)) ?? "\(count)"
+        return formatter
+    }()
+
+    static func characterCount(_ count: Int) -> String {
+        let number = characterFormatter.string(from: NSNumber(value: count)) ?? "\(count)"
         return "\(number) Zeichen"
     }
 
