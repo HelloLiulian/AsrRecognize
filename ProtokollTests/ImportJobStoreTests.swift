@@ -91,6 +91,22 @@ final class ImportJobStoreTests: XCTestCase {
         XCTAssertEqual(segments.map(\.text), ["Hallo", "Welt"])
     }
 
+    func testReplaceSegmentsRewritesLogAndKeepsAppending() async throws {
+        let job = makeJob()
+        try await store.create(job)
+        try await store.append(TranscriptSegment(text: "Eins", timestamp: 1), to: job.id)
+        try await store.append(TranscriptSegment(text: "Zwei", timestamp: 2), to: job.id)
+
+        let kept = await store.segments(for: job.id).filter { $0.text == "Eins" }
+        try await store.replaceSegments(kept, for: job.id)
+        var texts = await store.segments(for: job.id).map(\.text)
+        XCTAssertEqual(texts, ["Eins"])
+
+        try await store.append(TranscriptSegment(text: "Drei", timestamp: 3), to: job.id)
+        texts = await store.segments(for: job.id).map(\.text)
+        XCTAssertEqual(texts, ["Eins", "Drei"])
+    }
+
     func testPruneFinishedRemovesOnlyFinishedJobs() async throws {
         var running = makeJob()
         running.status = .running
