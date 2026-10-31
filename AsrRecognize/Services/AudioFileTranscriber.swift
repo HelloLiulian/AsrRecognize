@@ -39,6 +39,7 @@ final class AudioFileTranscriber: ObservableObject {
     private var pauseRequested = false
     private var cancelRequested = false
     private var startedAt: Date?
+    private var generation = 0
     private let store = ImportJobStore.shared
     private let converter = Audio16kConverter()
 
@@ -48,15 +49,20 @@ final class AudioFileTranscriber: ObservableObject {
         self.job = job
         self.audioURL = audioURL
         self.engine = engine
+        worker?.cancel()
         pauseRequested = false
         cancelRequested = false
         errorMessage = nil
         estimatedRemaining = nil
         startedAt = nil
+        progress = 0
+        processedTime = 0
+        loadFraction = 0
         totalDuration = job.duration
-        worker?.cancel()
+        generation += 1
+        let expected = generation
         worker = Task { [weak self] in
-            await self?.run(resume: resume)
+            await self?.run(generation: expected, resume: resume)
         }
     }
 
@@ -67,7 +73,7 @@ final class AudioFileTranscriber: ObservableObject {
     }
 
     func resume() {
-        guard phase == .paused, let job, let audioURL, let engine else { return }
+        guard (phase == .paused || phase == .failed), let job, let audioURL, let engine else { return }
         start(job: job, audioURL: audioURL, engine: engine, resume: true)
     }
 
@@ -76,8 +82,11 @@ final class AudioFileTranscriber: ObservableObject {
         worker?.cancel()
     }
 
-    private func run(resume: Bool) async {
-        guard var job, let audioURL, let engine else { return }
+    private func run(generation expected: Int, resume: Bool) async {
+        guard var job, let audioURL, let engine, generation == expected else { return }
+        defer {
+            if generation == expected { worker = nil }
+        }
         phase = .preparing
         statusText = "Audio wird vorbereitet…"
 
@@ -98,12 +107,16 @@ final class AudioFileTranscriber: ObservableObject {
             if resume {
                 let existing = await store.segments(for: job.id)
                 let resumeTime = Double(job.framesProcessed) / format.sampleRate
-                segments = existing.filter { $0.timestamp < resumeTime - 0.3 }
+                segments = existing.filter { $0.timestamp < resumeTime }
+                if segments.count != existing.count {
+                    try await store.replaceSegments(segments, for: job.id)
+                }
             } else {
                 segments = []
                 job.framesProcessed = 0
                 job.sourceSampleRate = format.sampleRate
                 try await store.update(job)
+                try await store.replaceSegments([], for: job.id)
             }
 
             file.framePosition = AVAudioFramePosition(job.framesProcessed)
@@ -118,6 +131,7 @@ final class AudioFileTranscriber: ObservableObject {
             startedAt = Date()
 
             while framesRead < totalFrames {
+                if generation != expected { return }
                 if cancelRequested { throw CancellationError() }
                 if pauseRequested {
                     job.framesProcessed = framesRead
@@ -142,18 +156,30 @@ final class AudioFileTranscriber: ObservableObject {
 
                 let samples = converter.convert(buffer)
                 let timestamp = Double(framesRead) / format.sampleRate
-                for segment in vad.feed(samples) {
-                    try await recognize(
-                        segment,
-                        timestamp: timestamp,
-                        engine: engine,
-                        job: &job
-                    )
+                let chunkStartFrames = framesRead
+                let segmentStartIndex = segments.count
+                do {
+                    for segment in vad.feed(samples) {
+                        try await recognize(
+                            segment,
+                            timestamp: timestamp,
+                            engine: engine,
+                            job: &job
+                        )
+                    }
+                    framesRead += Int64(buffer.frameLength)
+                    job.framesProcessed = framesRead
+                    try await store.update(job)
+                } catch {
+                    if segments.count > segmentStartIndex {
+                        segments.removeSubrange(segmentStartIndex...)
+                        try? await store.replaceSegments(segments, for: job.id)
+                    }
+                    framesRead = chunkStartFrames
+                    job.framesProcessed = chunkStartFrames
+                    throw error
                 }
 
-                framesRead += Int64(buffer.frameLength)
-                job.framesProcessed = framesRead
-                try await store.update(job)
                 self.job = job
                 progress = min(1, Double(framesRead) / Double(totalFrames))
                 processedTime = job.duration * progress
@@ -182,9 +208,18 @@ final class AudioFileTranscriber: ObservableObject {
             statusText = "Transkription abgeschlossen"
             phase = .finished
         } catch is CancellationError {
+            job.status = .paused
+            try? await store.update(job)
+            self.job = job
+            estimatedRemaining = nil
             statusText = ""
+            phase = .paused
         } catch {
-            errorMessage = error.localizedDescription
+            if let localized = error as? LocalizedError, let description = localized.errorDescription {
+                errorMessage = description
+            } else {
+                errorMessage = "Die Transkription ist fehlgeschlagen. Bitte versuchen Sie es erneut."
+            }
             if var current = self.job {
                 current.status = .paused
                 self.job = current
@@ -208,6 +243,7 @@ final class AudioFileTranscriber: ObservableObject {
             )
             let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { return }
+            try Task.checkCancellation()
             let segment = TranscriptSegment(text: trimmed, timestamp: timestamp)
             segments.append(segment)
             try await store.append(segment, to: job.id)
@@ -223,16 +259,21 @@ final class AudioFileTranscriber: ObservableObject {
     ) async throws -> String {
         var attempt = 0
         while true {
+            try Task.checkCancellation()
             do {
-                return try await engine.transcribe(samples: samples, language: language)
+                let text = try await engine.transcribe(samples: samples, language: language)
+                try Task.checkCancellation()
+                return text
             } catch TranscriptionEngineError.emptyResult {
                 throw TranscriptionEngineError.emptyResult
+            } catch TranscriptionEngineError.timeout {
+                throw TranscriptionEngineError.timeout
             } catch is CancellationError {
                 throw CancellationError()
             } catch {
                 attempt += 1
                 if attempt > 2 { throw error }
-                try? await Task.sleep(nanoseconds: 500_000_000)
+                try await Task.sleep(nanoseconds: 500_000_000)
             }
         }
     }

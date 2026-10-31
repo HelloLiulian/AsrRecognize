@@ -75,6 +75,16 @@ actor ImportJobStore {
         try handle.write(contentsOf: data)
     }
 
+    func replaceSegments(_ segments: [TranscriptSegment], for id: UUID) throws {
+        try FileManager.default.createDirectory(at: directory(for: id), withIntermediateDirectories: true)
+        var data = Data()
+        for segment in segments {
+            data.append(try encoder.encode(segment))
+            data.append(0x0A)
+        }
+        try data.write(to: segmentsURL(for: id), options: .atomic)
+    }
+
     private func truncateToCompleteLines(_ handle: FileHandle) throws {
         let end = try handle.seekToEnd()
         guard end > 0 else { return }

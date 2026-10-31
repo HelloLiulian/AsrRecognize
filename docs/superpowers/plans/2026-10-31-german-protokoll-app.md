@@ -2487,6 +2487,11 @@ gh run watch "$RUN" --exit-status
 
 Expected: 模拟器构建 PASS。
 
+**实现说明：**
+- 分块级回滚配合原子的 `replaceSegments`，保证 `segments.jsonl` 与 `framesProcessed` 始终一致，失败不会留下检查点之外的片段。
+- 恢复时将 `.failed` 视同 `.paused` 处理，失败后“Erneut versuchen”不再是无响应按钮。
+- 取消会持久化为 `.paused` 以便续传；重试循环不再吞掉取消，也不再重试超时错误。
+
 ---
 
 ### Task 11: 导入设置界面
