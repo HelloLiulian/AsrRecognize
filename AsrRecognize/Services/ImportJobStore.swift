@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 struct ImportJob: Codable, Identifiable, Equatable {
     enum Status: String, Codable {
@@ -27,6 +28,7 @@ actor ImportJobStore {
     private let base: URL
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
+    private let logger = Logger(subsystem: "Protokoll", category: "ImportJobStore")
 
     init(baseDirectory: URL? = nil) {
         let root = baseDirectory ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -59,6 +61,7 @@ actor ImportJobStore {
     }
 
     func append(_ segment: TranscriptSegment, to id: UUID) throws {
+        try FileManager.default.createDirectory(at: directory(for: id), withIntermediateDirectories: true)
         let url = segmentsURL(for: id)
         if !FileManager.default.fileExists(atPath: url.path) {
             FileManager.default.createFile(atPath: url.path, contents: nil)
@@ -67,34 +70,99 @@ actor ImportJobStore {
         data.append(0x0A)
         let handle = try FileHandle(forWritingTo: url)
         defer { try? handle.close() }
+        try truncateToCompleteLines(handle)
         try handle.seekToEnd()
         try handle.write(contentsOf: data)
     }
 
+    private func truncateToCompleteLines(_ handle: FileHandle) throws {
+        let end = try handle.seekToEnd()
+        guard end > 0 else { return }
+        let chunkSize: UInt64 = 4096
+        var position = end
+        while position > 0 {
+            let readSize = min(chunkSize, position)
+            try handle.seek(toOffset: position - readSize)
+            guard let chunk = try handle.read(upToCount: Int(readSize)), !chunk.isEmpty else { break }
+            if let lastNewline = chunk.lastIndex(of: 0x0A) {
+                let validEnd = position - readSize + UInt64(lastNewline) + 1
+                if validEnd < end { try handle.truncate(atOffset: validEnd) }
+                return
+            }
+            position -= readSize
+        }
+        try handle.truncate(atOffset: 0)
+    }
+
     func segments(for id: UUID) -> [TranscriptSegment] {
         guard let data = try? Data(contentsOf: segmentsURL(for: id)) else { return [] }
-        return data.split(separator: 0x0A).compactMap { line in
-            try? decoder.decode(TranscriptSegment.self, from: Data(line))
+        var failures = 0
+        let segments: [TranscriptSegment] = data.split(separator: 0x0A).compactMap { line in
+            do {
+                return try decoder.decode(TranscriptSegment.self, from: Data(line))
+            } catch {
+                failures += 1
+                return nil
+            }
         }
+        if failures > 0 {
+            logger.warning("Skipped \(failures) corrupt segment line(s) for job \(id.uuidString, privacy: .public)")
+        }
+        return segments
     }
 
     func job(id: UUID) -> ImportJob? {
-        guard let data = try? Data(contentsOf: stateURL(for: id)) else { return nil }
-        return try? decoder.decode(ImportJob.self, from: data)
+        let url = stateURL(for: id)
+        guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+        guard let data = try? Data(contentsOf: url) else {
+            logger.error("Could not read state for job \(id.uuidString, privacy: .public)")
+            return nil
+        }
+        do {
+            return try decoder.decode(ImportJob.self, from: data)
+        } catch {
+            logger.error("Could not decode state for job \(id.uuidString, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
     }
 
     func resumableJobs() -> [ImportJob] {
+        loadJobs().filter { $0.status != .finished }.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    func finishedJobs() -> [ImportJob] {
+        loadJobs().filter { $0.status == .finished }.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    func pruneFinished() {
+        for job in finishedJobs() {
+            do {
+                try FileManager.default.removeItem(at: directory(for: job.id))
+            } catch {
+                logger.error("Could not remove finished job \(job.id.uuidString, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
+    private func loadJobs() -> [ImportJob] {
         guard let entries = try? FileManager.default.contentsOfDirectory(
             at: base,
             includingPropertiesForKeys: nil
         ) else { return [] }
         return entries.compactMap { dir in
-            guard let data = try? Data(contentsOf: dir.appendingPathComponent("state.json")),
-                  let job = try? decoder.decode(ImportJob.self, from: data),
-                  job.status != .finished else { return nil }
-            return job
+            let url = dir.appendingPathComponent("state.json")
+            guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+            guard let data = try? Data(contentsOf: url) else {
+                logger.error("Could not read state at \(dir.lastPathComponent, privacy: .public)")
+                return nil
+            }
+            do {
+                return try decoder.decode(ImportJob.self, from: data)
+            } catch {
+                logger.error("Could not decode state at \(dir.lastPathComponent, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                return nil
+            }
         }
-        .sorted { $0.createdAt > $1.createdAt }
     }
 
     func delete(id: UUID) {
