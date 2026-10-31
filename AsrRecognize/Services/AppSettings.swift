@@ -41,7 +41,12 @@ final class AppSettings: ObservableObject {
 
     init() {
         apiKey = KeychainStore.read(Keys.apiKey)
-        languageCode = defaults.string(forKey: Keys.language) ?? "zh-CN"
+        let savedLanguage = defaults.string(forKey: Keys.language)
+        if let savedLanguage, savedLanguage != "zh-CN" {
+            languageCode = savedLanguage
+        } else {
+            languageCode = "de-DE"
+        }
         offlineOnly = defaults.bool(forKey: Keys.offline)
         autoSummarize = defaults.object(forKey: Keys.autoSummary) as? Bool ?? true
         if let raw = defaults.string(forKey: Keys.engine), let saved = ASREngine(rawValue: raw) {
@@ -56,6 +61,6 @@ final class AppSettings: ObservableObject {
     }
 
     var languageTitle: String {
-        languageCode == "en-US" ? "English" : "中文"
+        RecognitionLanguage.title(for: languageCode)
     }
 }

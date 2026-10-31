@@ -15,6 +15,7 @@
 		1F6FFD47FEE9A20CEDBD2A53 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1D9EBB3245783E22087BB1 /* Theme.swift */; };
 		12E42A6CF793C92CC500A4B4 /* Waveform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D372E954744BA276472D3AB /* Waveform.swift */; };
 		39E253C9A8B2D31725AF52EB /* Meeting.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D8B9B8A214AD83924111AD /* Meeting.swift */; };
+		BA3AF29E50E809FBDCD40C25 /* MeetingSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19B0ED2B8EDDA2AEF4018E1A /* MeetingSource.swift */; };
 		3E98767C3EB8F54AB95C4C04 /* MeetingSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6350D0F57D267452106E87E3 /* MeetingSummary.swift */; };
 		4194178AE7F9094DB45BD327 /* TranscriptSegment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6998A6BD81D3F34C64EEC231 /* TranscriptSegment.swift */; };
 		9260CC1D61AD0C4DFA09FE3D /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13305CF2077890EBE460E50A /* AppSettings.swift */; };
@@ -29,6 +30,7 @@
 		12F7715F67F721D60D88F685 /* LocalTranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E2DDA548C7A38FAF1B508E8 /* LocalTranscriber.swift */; };
 		4AC6C417323F7A843E366D44 /* Qwen3CoreMLEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 817007505D700077D5E504E6 /* Qwen3CoreMLEngine.swift */; };
 		BFA7C10D4487851AF18462B2 /* VoiceActivityDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60D2BF736F54B3EBE608A09 /* VoiceActivityDetector.swift */; };
+		E54691495A7089EA551B8B50 /* RecognitionLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65381B0DECEE8CEFA7A2CBBD /* RecognitionLanguage.swift */; };
 		612BCC3EA684AC874C9814A8 /* Formatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FD9528E86078D8DB7D2689A /* Formatters.swift */; };
 		2D57CB25D60977B1C222725F /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87087A3F2F218C7F5A354E49 /* Haptics.swift */; };
 		E2A4D6778AD923AA43858E74 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C04028AB8F9DE1E7ADA16E7C /* HomeView.swift */; };
@@ -47,6 +49,7 @@
 		DA1D9EBB3245783E22087BB1 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		5D372E954744BA276472D3AB /* Waveform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Waveform.swift; sourceTree = "<group>"; };
 		A1D8B9B8A214AD83924111AD /* Meeting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Meeting.swift; sourceTree = "<group>"; };
+		19B0ED2B8EDDA2AEF4018E1A /* MeetingSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingSource.swift; sourceTree = "<group>"; };
 		6350D0F57D267452106E87E3 /* MeetingSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingSummary.swift; sourceTree = "<group>"; };
 		6998A6BD81D3F34C64EEC231 /* TranscriptSegment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptSegment.swift; sourceTree = "<group>"; };
 		13305CF2077890EBE460E50A /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
@@ -61,6 +64,7 @@
 		2E2DDA548C7A38FAF1B508E8 /* LocalTranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Qwen3/LocalTranscriber.swift; sourceTree = "<group>"; };
 		817007505D700077D5E504E6 /* Qwen3CoreMLEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Qwen3/Qwen3CoreMLEngine.swift; sourceTree = "<group>"; };
 		F60D2BF736F54B3EBE608A09 /* VoiceActivityDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Qwen3/VoiceActivityDetector.swift; sourceTree = "<group>"; };
+		65381B0DECEE8CEFA7A2CBBD /* RecognitionLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecognitionLanguage.swift; sourceTree = "<group>"; };
 		1FD9528E86078D8DB7D2689A /* Formatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatters.swift; sourceTree = "<group>"; };
 		87087A3F2F218C7F5A354E49 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 		C04028AB8F9DE1E7ADA16E7C /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -137,6 +141,7 @@
 			isa = PBXGroup;
 			children = (
 				A1D8B9B8A214AD83924111AD /* Meeting.swift */,
+				19B0ED2B8EDDA2AEF4018E1A /* MeetingSource.swift */,
 				6350D0F57D267452106E87E3 /* MeetingSummary.swift */,
 				6998A6BD81D3F34C64EEC231 /* TranscriptSegment.swift */,
 			);
@@ -158,6 +163,7 @@
 				2E2DDA548C7A38FAF1B508E8 /* LocalTranscriber.swift */,
 				817007505D700077D5E504E6 /* Qwen3CoreMLEngine.swift */,
 				F60D2BF736F54B3EBE608A09 /* VoiceActivityDetector.swift */,
+				65381B0DECEE8CEFA7A2CBBD /* RecognitionLanguage.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -262,6 +268,7 @@
 				1F6FFD47FEE9A20CEDBD2A53 /* Theme.swift in Sources */,
 				12E42A6CF793C92CC500A4B4 /* Waveform.swift in Sources */,
 				39E253C9A8B2D31725AF52EB /* Meeting.swift in Sources */,
+				BA3AF29E50E809FBDCD40C25 /* MeetingSource.swift in Sources */,
 				3E98767C3EB8F54AB95C4C04 /* MeetingSummary.swift in Sources */,
 				4194178AE7F9094DB45BD327 /* TranscriptSegment.swift in Sources */,
 				9260CC1D61AD0C4DFA09FE3D /* AppSettings.swift in Sources */,
@@ -276,6 +283,7 @@
 				12F7715F67F721D60D88F685 /* LocalTranscriber.swift in Sources */,
 				4AC6C417323F7A843E366D44 /* Qwen3CoreMLEngine.swift in Sources */,
 				BFA7C10D4487851AF18462B2 /* VoiceActivityDetector.swift in Sources */,
+				E54691495A7089EA551B8B50 /* RecognitionLanguage.swift in Sources */,
 				612BCC3EA684AC874C9814A8 /* Formatters.swift in Sources */,
 				2D57CB25D60977B1C222725F /* Haptics.swift in Sources */,
 				E2A4D6778AD923AA43858E74 /* HomeView.swift in Sources */,

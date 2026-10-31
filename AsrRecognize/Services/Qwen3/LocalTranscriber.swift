@@ -417,7 +417,7 @@ final class LocalTranscriber: ObservableObject {
     // MARK: - Helpers
 
     private static func languageHint(for code: String) -> String {
-        code.hasPrefix("zh") ? "chinese" : "english"
+        RecognitionLanguage.qwenHint(for: code)
     }
 
     private static func level(from samples: [Float]) -> CGFloat {

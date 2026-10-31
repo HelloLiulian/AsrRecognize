@@ -18,6 +18,11 @@ enum AudioStorage {
         directory.appendingPathComponent("\(UUID().uuidString).caf")
     }
 
+    static func makeImportedFileURL(extension ext: String) -> URL {
+        let suffix = ext.isEmpty ? "audio" : ext.lowercased()
+        return directory.appendingPathComponent("\(UUID().uuidString).\(suffix)")
+    }
+
     static func delete(named fileName: String?) {
         guard let fileName, !fileName.isEmpty else { return }
         try? FileManager.default.removeItem(at: url(for: fileName))
