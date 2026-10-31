@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct SummaryContentView: View {
+    @EnvironmentObject private var settings: AppSettings
+
     let summary: MeetingSummary?
     let isGenerating: Bool
     let errorMessage: String?
@@ -119,14 +121,14 @@ struct SummaryContentView: View {
                 Text("KI-Protokoll")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Theme.textPrimary)
-                Text("Erstellt mit DeepSeek")
+                Text("Erstellt mit \(settings.aiModel)")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.textTertiary)
             }
 
             Spacer()
 
-            StatusPill(text: "DEEPSEEK", color: Theme.accentBright)
+            StatusPill(text: settings.aiModel.uppercased(), color: Theme.accentBright)
         }
         .padding(.horizontal, 2)
     }

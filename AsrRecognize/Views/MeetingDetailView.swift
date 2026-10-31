@@ -262,7 +262,7 @@ struct MeetingDetailView: View {
             isGenerating: isGenerating,
             errorMessage: summaryError,
             hasAPIKey: settings.hasAPIKey,
-            truncated: meeting.transcript.count > 20000,
+            truncated: meeting.transcript.count > AISummaryRequest.maxCharacters,
             onGenerate: {
                 Task {
                     await generateSummary()
@@ -332,8 +332,7 @@ struct MeetingDetailView: View {
     private func generateSummary() async {
         guard !isGenerating else { return }
 
-        let key = settings.apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !key.isEmpty else {
+        guard settings.hasAPIKey else {
             summaryError = "Bitte hinterlegen Sie zuerst einen API-Schlüssel in den Einstellungen."
             return
         }
@@ -349,7 +348,10 @@ struct MeetingDetailView: View {
         defer { isGenerating = false }
 
         do {
-            let result = try await DeepSeekService.summarize(transcript: transcript, apiKey: key)
+            let result = try await AISummaryService.summarize(
+                transcript: transcript,
+                configuration: settings.aiConfiguration
+            )
             meeting.summary = result
             try? modelContext.save()
             Haptics.success()

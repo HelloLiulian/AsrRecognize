@@ -13,10 +13,26 @@ final class AppSettings: ObservableObject {
         static let offline = "recognition_offline_only"
         static let autoSummary = "auto_summary"
         static let engine = "recognition_engine"
+        static let aiBaseURL = "ai_base_url"
+        static let aiModel = "ai_model"
+    }
+
+    static let defaultBaseURL = "https://api.deepseek.com"
+    static let defaultModel = "deepseek-chat"
+
+    @Published var aiBaseURL: String {
+        didSet {
+            defaults.set(aiBaseURL, forKey: Keys.aiBaseURL)
+            apiKey = KeychainStore.read(Self.keychainAccount(for: aiBaseURL))
+        }
+    }
+
+    @Published var aiModel: String {
+        didSet { defaults.set(aiModel, forKey: Keys.aiModel) }
     }
 
     @Published var apiKey: String {
-        didSet { KeychainStore.save(apiKey, for: Keys.apiKey) }
+        didSet { KeychainStore.save(apiKey, for: Self.keychainAccount(for: aiBaseURL)) }
     }
 
     @Published var languageCode: String {
@@ -35,12 +51,9 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(engine.rawValue, forKey: Keys.engine) }
     }
 
-    let model = "deepseek-chat"
-
     private let defaults = UserDefaults.standard
 
     init() {
-        apiKey = KeychainStore.read(Keys.apiKey)
         let savedLanguage = defaults.string(forKey: Keys.language)
         if let savedLanguage, savedLanguage != "zh-CN" {
             languageCode = savedLanguage
@@ -54,6 +67,36 @@ final class AppSettings: ObservableObject {
         } else {
             engine = LocalModelAssets.isBundled ? .qwen : .apple
         }
+
+        aiBaseURL = defaults.string(forKey: Keys.aiBaseURL) ?? Self.defaultBaseURL
+        aiModel = defaults.string(forKey: Keys.aiModel) ?? Self.defaultModel
+
+        let legacyKey = KeychainStore.read(Keys.apiKey)
+        if !legacyKey.isEmpty {
+            let account = Self.keychainAccount(for: aiBaseURL)
+            if KeychainStore.read(account).isEmpty {
+                KeychainStore.save(legacyKey, for: account)
+            }
+            KeychainStore.delete(Keys.apiKey)
+        }
+        apiKey = KeychainStore.read(Self.keychainAccount(for: aiBaseURL))
+    }
+
+    static func keychainAccount(for baseURL: String) -> String {
+        "ai-key:" + AISummaryRequest.normalizedBaseURL(baseURL)
+    }
+
+    var aiConfiguration: AIConfiguration {
+        AIConfiguration(baseURL: aiBaseURL, model: aiModel, apiKey: apiKey)
+    }
+
+    func applyAIConfiguration(baseURL: String, model: String, key: String) throws {
+        _ = try AISummaryRequest.endpointURL(baseURL)
+        aiBaseURL = AISummaryRequest.normalizedBaseURL(baseURL)
+        aiModel = model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? Self.defaultModel
+            : model.trimmingCharacters(in: .whitespacesAndNewlines)
+        apiKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var hasAPIKey: Bool {

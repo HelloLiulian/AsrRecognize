@@ -4,8 +4,11 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var settings: AppSettings
 
+    @State private var draftBaseURL = ""
+    @State private var draftModel = ""
     @State private var draftKey = ""
     @State private var keyVisible = false
+    @State private var aiError: String?
     @State private var savedFlash = false
     @State private var didLoad = false
 
@@ -38,6 +41,8 @@ struct SettingsView: View {
         .onAppear {
             guard !didLoad else { return }
             didLoad = true
+            draftBaseURL = settings.aiBaseURL
+            draftModel = settings.aiModel
             draftKey = settings.apiKey
         }
     }
@@ -83,79 +88,50 @@ struct SettingsView: View {
             SectionLabel(text: "KI-ANBIETER")
 
             VStack(alignment: .leading, spacing: 14) {
-                HStack {
-                    HStack(spacing: 8) {
-                        Image(systemName: "key.fill")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(Theme.accentBright)
-                        Text("API Key")
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundStyle(Theme.textPrimary)
-                    }
+                labeledField("Basis-URL", text: $draftBaseURL, placeholder: "https://api.openai.com/v1", secure: false)
+                labeledField("Modell", text: $draftModel, placeholder: "gpt-4o-mini", secure: false)
+                labeledField("API-Schlüssel", text: $draftKey, placeholder: "sk-…", secure: !keyVisible)
 
-                    Spacer()
-
-                    if let url = URL(string: "https://platform.deepseek.com/api_keys") {
-                        Link(destination: url) {
-                            HStack(spacing: 3) {
-                                Text("Öffnen")
-                                Image(systemName: "arrow.up.right")
-                                    .font(.system(size: 9, weight: .bold))
-                            }
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(Theme.accentBright)
-                        }
-                    }
+                if let aiError {
+                    Text(aiError)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.record)
                 }
 
-                HStack(spacing: 8) {
-                    Group {
-                        if keyVisible {
-                            TextField("sk-…", text: $draftKey)
-                        } else {
-                            SecureField("sk-…", text: $draftKey)
-                        }
-                    }
-                    .font(.system(size: 13, design: .monospaced))
-                    .foregroundStyle(Theme.textPrimary)
-                    .tint(Theme.accent)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-
-                    Button {
-                        Haptics.tap()
-                        keyVisible.toggle()
-                    } label: {
-                        Image(systemName: keyVisible ? "eye.slash" : "eye")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(Theme.textTertiary)
-                            .frame(width: 36, height: 36)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(keyVisible ? "API-Schlüssel ausblenden" : "API-Schlüssel anzeigen")
-                }
-                .padding(.leading, 14)
-                .padding(.trailing, 6)
-                .frame(height: 48)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.black.opacity(0.3))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(Theme.stroke, lineWidth: 1)
-                )
-
-                PillButton(title: "API-Schlüssel speichern", icon: "checkmark") {
-                    saveKey()
+                PillButton(title: "Speichern", icon: "checkmark") {
+                    saveAI()
                 }
 
-                Text("Der Schlüssel wird ausschließlich im Schlüsselbund gespeichert. Bei der KI-Zusammenfassung wird das Transkript an den konfigurierten Anbieter gesendet.")
+                Text("Der Schlüssel wird im Schlüsselbund gespeichert. Bei der KI-Zusammenfassung wird ausschließlich das Transkript an diesen Anbieter gesendet.")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.textTertiary)
                     .lineSpacing(3)
             }
             .glassCard()
+        }
+    }
+
+    private func labeledField(_ title: String, text: Binding<String>, placeholder: String, secure: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(Theme.textSecondary)
+            Group {
+                if secure {
+                    SecureField(placeholder, text: text)
+                } else {
+                    TextField(placeholder, text: text)
+                }
+            }
+            .font(.system(size: 13, design: .monospaced))
+            .foregroundStyle(Theme.textPrimary)
+            .tint(Theme.accent)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .padding(.horizontal, 14)
+            .frame(height: 44)
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.black.opacity(0.3)))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.stroke, lineWidth: 1))
         }
     }
 
@@ -192,7 +168,7 @@ struct SettingsView: View {
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(Theme.textPrimary)
                     Spacer()
-                    Text(settings.model)
+                    Text(settings.aiModel)
                         .font(.system(size: 12, weight: .medium, design: .monospaced))
                         .foregroundStyle(Theme.accentBright)
                 }
@@ -338,16 +314,24 @@ struct SettingsView: View {
         }
     }
 
-    private func saveKey() {
-        settings.apiKey = draftKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        Haptics.success()
-        withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) {
-            savedFlash = true
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-            withAnimation(.easeOut(duration: 0.2)) {
-                savedFlash = false
+    private func saveAI() {
+        do {
+            try settings.applyAIConfiguration(baseURL: draftBaseURL, model: draftModel, key: draftKey)
+            draftBaseURL = settings.aiBaseURL
+            draftModel = settings.aiModel
+            aiError = nil
+            Haptics.success()
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) {
+                savedFlash = true
             }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    savedFlash = false
+                }
+            }
+        } catch {
+            aiError = error.localizedDescription
+            Haptics.warning()
         }
     }
 }
