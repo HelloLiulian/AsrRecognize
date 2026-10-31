@@ -1168,7 +1168,7 @@ git rm AsrRecognize/Services/DeepSeekService.swift
     }
 
     static let defaultBaseURL = "https://api.deepseek.com"
-    static let defaultModel = "deepseek-chat"
+    static let defaultModel = "deepseek-flash"
 
     @Published var aiBaseURL: String {
         didSet {
@@ -1371,6 +1371,11 @@ gh run watch "$RUN" --exit-status
 ```
 
 Expected: Logic tests PASS；模拟器构建 PASS。
+
+**实现偏差记录：**
+- 网络错误统一映射为德语 `AISummaryError.network`；响应解码失败映射为 `.invalidResponse`。
+- `ChatEnvelope.Message.content` 改为 `String?`，nil/空视为 `.invalidResponse`。
+- 端点切换时的 Key 规则：仅当用户输入的新 Key 与旧端点 Key 不同才写入新端点；否则保留目标端点已存的 Key（同端点时以输入为准）。
 
 ---
 

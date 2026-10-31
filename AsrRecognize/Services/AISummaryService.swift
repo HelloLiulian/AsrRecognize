@@ -7,7 +7,15 @@ enum AISummaryService {
         session: URLSession = .shared
     ) async throws -> MeetingSummary {
         let request = try AISummaryRequest.make(configuration: configuration, transcript: transcript)
-        let (data, response) = try await session.data(for: request)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch let error as AISummaryError {
+            throw error
+        } catch {
+            throw AISummaryError.network
+        }
 
         guard let http = response as? HTTPURLResponse else {
             throw AISummaryError.invalidResponse
@@ -19,8 +27,13 @@ enum AISummaryService {
             throw AISummaryError.server("Die KI-Anfrage ist fehlgeschlagen (HTTP \(http.statusCode)).")
         }
 
-        let envelope = try JSONDecoder().decode(ChatEnvelope.self, from: data)
-        guard let content = envelope.choices.first?.message.content else {
+        let envelope: ChatEnvelope
+        do {
+            envelope = try JSONDecoder().decode(ChatEnvelope.self, from: data)
+        } catch {
+            throw AISummaryError.invalidResponse
+        }
+        guard let content = envelope.choices.first?.message.content, !content.isEmpty else {
             throw AISummaryError.invalidResponse
         }
         return try AISummaryRequest.parse(content: content)
@@ -29,7 +42,7 @@ enum AISummaryService {
     private struct ChatEnvelope: Decodable {
         let choices: [Choice]
         struct Choice: Decodable { let message: Message }
-        struct Message: Decodable { let content: String }
+        struct Message: Decodable { let content: String? }
     }
 
     private struct APIErrorEnvelope: Decodable {

@@ -92,12 +92,23 @@ final class AppSettings: ObservableObject {
     }
 
     func applyAIConfiguration(baseURL: String, model: String, key: String) throws {
-        _ = try AISummaryRequest.endpointURL(baseURL)
-        aiBaseURL = AISummaryRequest.normalizedBaseURL(baseURL)
-        aiModel = model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            ? Self.defaultModel
-            : model.trimmingCharacters(in: .whitespacesAndNewlines)
-        apiKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalized = AISummaryRequest.normalizedBaseURL(baseURL)
+        _ = try AISummaryRequest.endpointURL(normalized)
+        let trimmedModel = model.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        let previousBase = AISummaryRequest.normalizedBaseURL(aiBaseURL)
+        let previousKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        aiBaseURL = normalized
+        aiModel = trimmedModel.isEmpty ? Self.defaultModel : trimmedModel
+
+        if normalized == previousBase {
+            apiKey = trimmedKey
+        } else if trimmedKey != previousKey {
+            // The user typed a different key for the new endpoint; save it there.
+            apiKey = trimmedKey
+        }
+        // Otherwise keep the key already stored for the target endpoint (loaded by aiBaseURL.didSet).
     }
 
     var hasAPIKey: Bool {

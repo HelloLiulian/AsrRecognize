@@ -10,6 +10,7 @@ enum AISummaryError: LocalizedError {
     case invalidURL
     case missingKey
     case invalidResponse
+    case network
     case server(String)
 
     var errorDescription: String? {
@@ -20,6 +21,8 @@ enum AISummaryError: LocalizedError {
             return "Es ist kein API-Schlüssel hinterlegt."
         case .invalidResponse:
             return "Die Antwort der KI konnte nicht verarbeitet werden."
+        case .network:
+            return "Die Verbindung zum KI-Anbieter ist fehlgeschlagen. Bitte prüfen Sie Ihre Internetverbindung."
         case .server(let message):
             return message
         }

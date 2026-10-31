@@ -7,7 +7,6 @@ struct SettingsView: View {
     @State private var draftBaseURL = ""
     @State private var draftModel = ""
     @State private var draftKey = ""
-    @State private var keyVisible = false
     @State private var aiError: String?
     @State private var savedFlash = false
     @State private var didLoad = false
@@ -90,7 +89,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 14) {
                 labeledField("Basis-URL", text: $draftBaseURL, placeholder: "https://api.openai.com/v1", secure: false)
                 labeledField("Modell", text: $draftModel, placeholder: "gpt-4o-mini", secure: false)
-                labeledField("API-Schlüssel", text: $draftKey, placeholder: "sk-…", secure: !keyVisible)
+                labeledField("API-Schlüssel", text: $draftKey, placeholder: "sk-…", secure: true)
 
                 if let aiError {
                     Text(aiError)
@@ -319,6 +318,7 @@ struct SettingsView: View {
             try settings.applyAIConfiguration(baseURL: draftBaseURL, model: draftModel, key: draftKey)
             draftBaseURL = settings.aiBaseURL
             draftModel = settings.aiModel
+            draftKey = settings.apiKey
             aiError = nil
             Haptics.success()
             withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) {
