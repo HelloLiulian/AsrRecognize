@@ -30,6 +30,7 @@ enum ImportValidation {
         guard fileSize <= maxFileSize else { throw Failure.tooLarge }
     }
 
+    /// `required` is the total disk footprint for the import, not just the source file; callers include copy/working-space headroom.
     static func validateAvailableSpace(required: Int64, available: Int64?) throws {
         guard let available else { return }
         guard available >= required else { throw Failure.insufficientSpace }
