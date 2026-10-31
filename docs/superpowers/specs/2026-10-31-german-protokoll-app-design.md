@@ -57,7 +57,7 @@
 | 用途 | 格式 / 示例 |
 | --- | --- |
 | 会议时间 | `dd.MM.yyyy, HH:mm` → `31.10.2026, 14:30` |
-| 首页日期 | `EEEE, d. MMMM` → `Freitag, 31. Oktober` |
+| 首页日期 | `EEEE, d. MMMM` → `Samstag, 31. Oktober` |
 | 仅日期 | `dd.MM.yyyy` |
 | 时长 | `1 Std. 5 Min.`、`45 Sek.`、`2 Std.` |
 | 字数 | `1.234 Zeichen`（`NumberFormatter`，de_DE） |
@@ -89,7 +89,7 @@
 ### 3.4 主要界面文案
 
 **首页**
-- 标题：`Protokolle`；副标题：`Freitag, 31. Oktober · 12 Besprechungen`
+- 标题：`Protokolle`；副标题：`Samstag, 31. Oktober · 12 Besprechungen`
 - 搜索占位：`Protokolle und Transkripte durchsuchen…`
 - 统计：`Besprechungen diese Woche` / `Dauer diese Woche` / `Gesamt`
 - 列表：`Letzte Besprechungen` / `Suchergebnisse`
@@ -294,14 +294,17 @@ AVAudioFile(forReading:)
 
 ### 7.1 单元测试
 
-在 `tools/generate_xcodeproj.py` 中新增 XCTest target `ProtokollTests`（app-hosted，模拟器运行），覆盖纯逻辑：
+`tools/run-logic-tests.sh` 在 CI 的 macOS runner 上把纯逻辑源码（`Formatters.swift`、`MeetingSummary.swift`、`TranscriptSegment.swift`、`RecognitionLanguage.swift`、`ExportService.swift`、`ImportJobStore.swift`、`ImportValidation.swift`、`AISummaryRequest.swift`）复制进临时 Swift Package，与 `ProtokollTests/*.swift` 一起执行 `swift test`。这些文件只依赖 Foundation，不引入 SwiftData/UIKit，避免维护第二套 XCTest target。
+
+覆盖：
 
 - `AppFormat`：德语日期、时长、字数、ISO 周、默认标题。
 - `ExportService`：TXT 内容（含/不含纪要）、文件名清洗（变音字母、非法字符、长度）。
 - `ImportJobStore`：`state.json` + `segments.jsonl` 读写与恢复。
 - 导入校验：时长/大小边界（7200 秒、1.5 GB）。
+- AI 请求：https 校验、端点拼接、德语提示词、12 万字符截断、JSON 解析。
 
-CI 新增测试步骤：动态选择 runner 上第一个可用 iPhone 模拟器，执行 `xcodebuild test`。
+CI 新增独立 `logic-tests` job，不依赖模拟器。
 
 ### 7.2 构建
 
@@ -332,7 +335,7 @@ CI 新增测试步骤：动态选择 runner 上第一个可用 iPhone 模拟器�
 - `AsrRecognize/Services/AISummaryService.swift`（由 `DeepSeekService.swift` 重命名改造）
 - `AsrRecognize/Views/ImportSetupView.swift`
 - `AsrRecognize/Views/ImportProgressView.swift`
-- `ProtokollTests/…`（XCTest）
+- `ProtokollTests/…`（逻辑测试源码）+ `tools/run-logic-tests.sh`
 
 **修改**
 
