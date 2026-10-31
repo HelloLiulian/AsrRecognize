@@ -5,13 +5,13 @@ struct ImportSetupView: View {
     @EnvironmentObject private var settings: AppSettings
 
     let job: ImportJob
-    let onStart: (ASREngine, String) -> Void
+    let onStart: (ASREngine, String, String) -> Void
 
     @State private var title: String
     @State private var engine: ASREngine
     @State private var languageCode: String
 
-    init(job: ImportJob, onStart: @escaping (ASREngine, String) -> Void) {
+    init(job: ImportJob, onStart: @escaping (ASREngine, String, String) -> Void) {
         self.job = job
         self.onStart = onStart
         _title = State(initialValue: job.title)
@@ -143,7 +143,8 @@ struct ImportSetupView: View {
             PillButton(title: "Transkription starten", icon: "waveform") {
                 settings.engine = engine
                 settings.languageCode = languageCode
-                onStart(engine, languageCode)
+                let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+                onStart(engine, languageCode, trimmedTitle.isEmpty ? job.title : trimmedTitle)
                 dismiss()
             }
             Button("Abbrechen") { dismiss() }

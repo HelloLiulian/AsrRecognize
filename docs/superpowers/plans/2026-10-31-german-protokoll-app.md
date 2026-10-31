@@ -2673,6 +2673,10 @@ gh run watch "$RUN" --exit-status
 
 Expected: 模拟器构建 PASS。
 
+**实现说明：**
+- `onStart` 改为 `(ASREngine, String, String) -> Void`，第三个参数是去空白后的标题（为空时回退到 `job.title`）；否则标题输入框的编辑会被静默丢弃。
+- Task 12 的 `startImport` 需使用该标题更新 `ImportJob` 并持久化，保证断点续传后仍显示用户编辑的名称。
+
 ---
 
 ### Task 12: 导入进度页、首页导入与断点恢复
