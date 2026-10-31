@@ -27,6 +27,7 @@ jobs:
 
   simulator-app:
     name: Simulator app for Appetize
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || contains(github.event.head_commit.message, '[full-ci]')
     runs-on: macos-15
     timeout-minutes: 60
     steps:
