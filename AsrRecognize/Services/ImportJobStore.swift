@@ -68,7 +68,7 @@ actor ImportJobStore {
         }
         var data = try encoder.encode(segment)
         data.append(0x0A)
-        let handle = try FileHandle(forWritingTo: url)
+        let handle = try FileHandle(forUpdating: url)
         defer { try? handle.close() }
         try truncateToCompleteLines(handle)
         try handle.seekToEnd()
