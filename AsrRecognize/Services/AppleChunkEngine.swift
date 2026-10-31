@@ -58,24 +58,27 @@ final class AppleChunkEngine: ChunkTranscriptionEngine, @unchecked Sendable {
         request.shouldReportPartialResults = false
         request.requiresOnDeviceRecognition = offlineOnly
         request.addsPunctuation = true
-        request.append(buffer)
-        request.endAudio()
 
         let box = RecognitionBox()
         let text = try await withThrowingTaskGroup(of: String.self) { group in
             group.addTask {
-                try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
-                    let guardOnce = ContinuationGuard()
-                    let task = recognizer.recognitionTask(with: request) { result, error in
-                        if let error {
-                            guard guardOnce.claim() else { return }
-                            continuation.resume(throwing: error)
-                            return
+                try await withTaskCancellationHandler {
+                    try await withCheckedThrowingContinuation { continuation in
+                        guard box.install(continuation) else { return }
+                        let task = recognizer.recognitionTask(with: request) { result, error in
+                            if let error {
+                                box.fail(error)
+                                return
+                            }
+                            guard let result, result.isFinal else { return }
+                            box.succeed(result.bestTranscription.formattedString)
                         }
-                        guard let result, result.isFinal, guardOnce.claim() else { return }
-                        continuation.resume(returning: result.bestTranscription.formattedString)
+                        box.attach(task)
+                        request.append(buffer)
+                        request.endAudio()
                     }
-                    box.set(task)
+                } onCancel: {
+                    box.cancel()
                 }
             }
             group.addTask {
@@ -110,34 +113,69 @@ final class AppleChunkEngine: ChunkTranscriptionEngine, @unchecked Sendable {
     }
 }
 
-private final class ContinuationGuard: @unchecked Sendable {
-    private let lock = NSLock()
-    private var claimed = false
-
-    func claim() -> Bool {
-        lock.lock()
-        defer { lock.unlock() }
-        if claimed { return false }
-        claimed = true
-        return true
-    }
-}
-
 private final class RecognitionBox: @unchecked Sendable {
     private let lock = NSLock()
     private var task: SFSpeechRecognitionTask?
+    private var continuation: CheckedContinuation<String, Error>?
+    private var cancelled = false
+    private var finished = false
 
-    func set(_ task: SFSpeechRecognitionTask) {
+    @discardableResult
+    func install(_ continuation: CheckedContinuation<String, Error>) -> Bool {
+        lock.lock()
+        if cancelled || finished {
+            lock.unlock()
+            continuation.resume(throwing: CancellationError())
+            return false
+        }
+        self.continuation = continuation
+        lock.unlock()
+        return true
+    }
+
+    func attach(_ task: SFSpeechRecognitionTask) {
         lock.lock()
         self.task = task
+        let shouldCancel = cancelled || finished
         lock.unlock()
+        if shouldCancel { task.cancel() }
+    }
+
+    func succeed(_ text: String) {
+        finish(.success(text))
+    }
+
+    func fail(_ error: Error) {
+        finish(.failure(error))
     }
 
     func cancel() {
         lock.lock()
+        cancelled = true
+        let continuation = self.continuation
         let task = self.task
+        self.continuation = nil
         self.task = nil
+        let alreadyFinished = finished
+        finished = true
         lock.unlock()
         task?.cancel()
+        if !alreadyFinished {
+            continuation?.resume(throwing: CancellationError())
+        }
+    }
+
+    private func finish(_ result: Result<String, Error>) {
+        lock.lock()
+        guard !finished else {
+            lock.unlock()
+            return
+        }
+        finished = true
+        let continuation = self.continuation
+        self.continuation = nil
+        self.task = nil
+        lock.unlock()
+        continuation?.resume(with: result)
     }
 }
