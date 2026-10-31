@@ -17,6 +17,13 @@ struct MeetingDetailView: View {
     @State private var showDeleteAlert = false
     @State private var showSettings = false
     @State private var showCopied = false
+    @State private var exportItem: ExportItem?
+    @State private var exportError: String?
+
+    struct ExportItem: Identifiable {
+        let id = UUID()
+        let url: URL
+    }
 
     enum DetailTab: Hashable {
         case summary
@@ -85,6 +92,18 @@ struct MeetingDetailView: View {
             SettingsView()
                 .environmentObject(settings)
         }
+        .sheet(item: $exportItem) { item in
+            ActivityView(items: [item.url])
+                .presentationDetents([.medium, .large])
+        }
+        .alert("Export fehlgeschlagen", isPresented: Binding(
+            get: { exportError != nil },
+            set: { if !$0 { exportError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(exportError ?? "")
+        }
         .alert("Besprechung löschen?", isPresented: $showDeleteAlert) {
             Button("Löschen", role: .destructive) {
                 deleteMeeting()
@@ -126,6 +145,26 @@ struct MeetingDetailView: View {
             .accessibilityLabel("Protokoll teilen")
 
             Menu {
+                Menu {
+                    Button {
+                        exportText()
+                    } label: {
+                        Label("Als Text (.txt)", systemImage: "doc.text")
+                    }
+                    if meeting.audioURL != nil {
+                        Button {
+                            exportAudio()
+                        } label: {
+                            Label("Audio exportieren", systemImage: "waveform")
+                        }
+                        if audioFileSize > 500_000_000 {
+                            Text("Bei großen Dateien kann der Export einige Sekunden dauern.")
+                        }
+                    }
+                } label: {
+                    Label("Exportieren", systemImage: "square.and.arrow.up.on.square")
+                }
+
                 Button {
                     copyTranscript()
                 } label: {
@@ -371,6 +410,35 @@ struct MeetingDetailView: View {
             withAnimation(.easeOut(duration: 0.2)) {
                 showCopied = false
             }
+        }
+    }
+
+    private var audioFileSize: Int64 {
+        guard let url = meeting.audioURL else { return 0 }
+        return (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int64) ?? 0
+    }
+
+    private func exportText() {
+        do {
+            let payload = ExportPayload(
+                title: meeting.title,
+                date: meeting.createdAt,
+                duration: meeting.duration,
+                transcript: meeting.transcript,
+                summary: meeting.summary
+            )
+            exportItem = ExportItem(url: try ExportService.writeText(for: payload))
+        } catch {
+            exportError = error.localizedDescription
+        }
+    }
+
+    private func exportAudio() {
+        guard let source = meeting.audioURL else { return }
+        do {
+            exportItem = ExportItem(url: try ExportService.prepareAudio(source: source, title: meeting.title))
+        } catch {
+            exportError = error.localizedDescription
         }
     }
 

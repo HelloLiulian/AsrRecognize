@@ -23,6 +23,7 @@
 		9260CC1D61AD0C4DFA09FE3D /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13305CF2077890EBE460E50A /* AppSettings.swift */; };
 		284977CE4C1118776525153B /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68901D57323EC9B66BB8A9EB /* AudioPlayer.swift */; };
 		612122EB1AEB179932E8C971 /* AudioStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 061E67879890DE81033FFE64 /* AudioStorage.swift */; };
+		CD9489EBA1485C57967A3B91 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ACDE46BEB924E7E00FA5870 /* ExportService.swift */; };
 		207EB54F9B73DE9011E5AA6E /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68924159A5E2F3CD7AE9BE1E /* KeychainStore.swift */; };
 		4419E89815911023C9BE4A46 /* LiveTranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06AD893B664ED142AAB6A864 /* LiveTranscriber.swift */; };
 		AFD025B46DC3B17241BFC691 /* Audio16kConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAABFEC10EF5A5466A472E6A /* Audio16kConverter.swift */; };
@@ -34,6 +35,7 @@
 		E54691495A7089EA551B8B50 /* RecognitionLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65381B0DECEE8CEFA7A2CBBD /* RecognitionLanguage.swift */; };
 		612BCC3EA684AC874C9814A8 /* Formatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FD9528E86078D8DB7D2689A /* Formatters.swift */; };
 		2D57CB25D60977B1C222725F /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87087A3F2F218C7F5A354E49 /* Haptics.swift */; };
+		DE6E015F4A294E55475A965C /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 669593CEA96D7AA6B50E8993 /* ActivityView.swift */; };
 		E2A4D6778AD923AA43858E74 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C04028AB8F9DE1E7ADA16E7C /* HomeView.swift */; };
 		88E2E49CF23D0388F3129D8A /* MeetingDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4259353F19E8F1E1833F94B5 /* MeetingDetailView.swift */; };
 		28C7C4C58B14B498D49D6F57 /* RecordingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5E34C474B8829BC43E8C156 /* RecordingView.swift */; };
@@ -58,6 +60,7 @@
 		13305CF2077890EBE460E50A /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		68901D57323EC9B66BB8A9EB /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		061E67879890DE81033FFE64 /* AudioStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioStorage.swift; sourceTree = "<group>"; };
+		2ACDE46BEB924E7E00FA5870 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
 		68924159A5E2F3CD7AE9BE1E /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
 		06AD893B664ED142AAB6A864 /* LiveTranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTranscriber.swift; sourceTree = "<group>"; };
 		CAABFEC10EF5A5466A472E6A /* Audio16kConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Qwen3/Audio16kConverter.swift; sourceTree = "<group>"; };
@@ -69,6 +72,7 @@
 		65381B0DECEE8CEFA7A2CBBD /* RecognitionLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecognitionLanguage.swift; sourceTree = "<group>"; };
 		1FD9528E86078D8DB7D2689A /* Formatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatters.swift; sourceTree = "<group>"; };
 		87087A3F2F218C7F5A354E49 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
+		669593CEA96D7AA6B50E8993 /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
 		C04028AB8F9DE1E7ADA16E7C /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		4259353F19E8F1E1833F94B5 /* MeetingDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingDetailView.swift; sourceTree = "<group>"; };
 		E5E34C474B8829BC43E8C156 /* RecordingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingView.swift; sourceTree = "<group>"; };
@@ -158,6 +162,7 @@
 				13305CF2077890EBE460E50A /* AppSettings.swift */,
 				68901D57323EC9B66BB8A9EB /* AudioPlayer.swift */,
 				061E67879890DE81033FFE64 /* AudioStorage.swift */,
+				2ACDE46BEB924E7E00FA5870 /* ExportService.swift */,
 				68924159A5E2F3CD7AE9BE1E /* KeychainStore.swift */,
 				06AD893B664ED142AAB6A864 /* LiveTranscriber.swift */,
 				CAABFEC10EF5A5466A472E6A /* Audio16kConverter.swift */,
@@ -183,6 +188,7 @@
 		9D627FDA59C3F7CC6A0AC4FA /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				669593CEA96D7AA6B50E8993 /* ActivityView.swift */,
 				C04028AB8F9DE1E7ADA16E7C /* HomeView.swift */,
 				4259353F19E8F1E1833F94B5 /* MeetingDetailView.swift */,
 				E5E34C474B8829BC43E8C156 /* RecordingView.swift */,
@@ -278,6 +284,7 @@
 				9260CC1D61AD0C4DFA09FE3D /* AppSettings.swift in Sources */,
 				284977CE4C1118776525153B /* AudioPlayer.swift in Sources */,
 				612122EB1AEB179932E8C971 /* AudioStorage.swift in Sources */,
+				CD9489EBA1485C57967A3B91 /* ExportService.swift in Sources */,
 				207EB54F9B73DE9011E5AA6E /* KeychainStore.swift in Sources */,
 				4419E89815911023C9BE4A46 /* LiveTranscriber.swift in Sources */,
 				AFD025B46DC3B17241BFC691 /* Audio16kConverter.swift in Sources */,
@@ -289,6 +296,7 @@
 				E54691495A7089EA551B8B50 /* RecognitionLanguage.swift in Sources */,
 				612BCC3EA684AC874C9814A8 /* Formatters.swift in Sources */,
 				2D57CB25D60977B1C222725F /* Haptics.swift in Sources */,
+				DE6E015F4A294E55475A965C /* ActivityView.swift in Sources */,
 				E2A4D6778AD923AA43858E74 /* HomeView.swift in Sources */,
 				88E2E49CF23D0388F3129D8A /* MeetingDetailView.swift in Sources */,
 				28C7C4C58B14B498D49D6F57 /* RecordingView.swift in Sources */,
