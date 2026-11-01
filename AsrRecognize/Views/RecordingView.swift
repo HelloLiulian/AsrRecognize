@@ -328,6 +328,14 @@ struct RecordingView: View {
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.textTertiary)
 
+                if let started = local.loadStartedAt, !local.isPrepared {
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        Text("Wartezeit: \(Int(context.date.timeIntervalSince(started))) s")
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(Theme.textTertiary)
+                    }
+                }
+
                 if local.loadFraction > 0, local.loadFraction < 1 {
                     ProgressView(value: local.loadFraction)
                         .frame(maxWidth: 220)

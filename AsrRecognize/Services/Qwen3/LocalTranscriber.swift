@@ -20,6 +20,7 @@ final class LocalTranscriber: ObservableObject {
     @Published private(set) var isPrepared = false
     @Published private(set) var isDraining = false
     @Published private(set) var loadFraction: Double = 0
+    @Published private(set) var loadStartedAt: Date?
     @Published private(set) var statusText = "Lokales Modell nicht geladen"
 
     private let engine: Qwen3CoreMLEngine
@@ -103,6 +104,8 @@ final class LocalTranscriber: ObservableObject {
             return
         }
         loadFraction = 0
+        loadStartedAt = Date()
+        defer { loadStartedAt = nil }
         statusText = "Der erste Modellstart kann etwas dauern…"
         do {
             try await engine.prepare { [weak self] fraction, message in

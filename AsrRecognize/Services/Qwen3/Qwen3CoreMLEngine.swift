@@ -10,8 +10,9 @@ actor Qwen3CoreMLEngine: ChunkTranscriptionEngine {
     private static let logger = Logger(subsystem: "com.liulian.AsrRecognize", category: "Qwen3CoreML")
 
     /// Some devices fail to build the ANE execution plan for the palettized
-    /// decoder (`error code: -14`). Retry the whole pipeline on GPU, then CPU,
-    /// before reporting the model as unusable.
+    /// decoder (`error code: -14`), and GPU warm-up can stall indefinitely on
+    /// iPadOS 26. Keep the encoder on ANE and run the decoder on CPU, falling
+    /// back to full CPU before reporting the model as unusable.
     private struct ComputePlan: Sendable {
         let name: String
         let encoder: MLComputeUnits
@@ -19,12 +20,16 @@ actor Qwen3CoreMLEngine: ChunkTranscriptionEngine {
     }
 
     private static let computePlans: [ComputePlan] = [
-        .init(name: "Neuronale Engine", encoder: .cpuAndNeuralEngine, decoder: .cpuAndNeuralEngine),
-        .init(name: "GPU", encoder: .cpuAndGPU, decoder: .cpuAndGPU),
+        .init(name: "ANE+CPU", encoder: .cpuAndNeuralEngine, decoder: .cpuOnly),
         .init(name: "CPU", encoder: .cpuOnly, decoder: .cpuOnly),
     ]
 
     private var model: CoreMLASRModel?
+
+    private static func verboseLog(_ message: String, _ plan: ComputePlan, _ started: CFAbsoluteTime) {
+        let milliseconds = Int((CFAbsoluteTimeGetCurrent() - started) * 1000)
+        logger.info("\(message, privacy: .public) \(plan.name, privacy: .public) plan in \(milliseconds, privacy: .public) ms")
+    }
 
     func prepare(progress: @escaping @Sendable (Double, String) -> Void) async throws {
         guard model == nil else { return }
@@ -37,20 +42,28 @@ actor Qwen3CoreMLEngine: ChunkTranscriptionEngine {
         for (index, plan) in Self.computePlans.enumerated() {
             try Task.checkCancellation()
             let base = 0.02 + planSpan * Double(index)
+            let label = "(\(index + 1)/\(Self.computePlans.count), \(plan.name))"
+            let started = CFAbsoluteTimeGetCurrent()
             do {
-                progress(base, "Lokales Modell wird geladen (\(index + 1)/\(Self.computePlans.count), \(plan.name))…")
+                progress(base, "Lokales Modell wird geladen \(label)…")
                 let loaded = try await CoreMLASRModel.fromPretrained(
                     encoderComputeUnits: plan.encoder,
                     decoderComputeUnits: plan.decoder,
                     cacheDir: directory,
                     offlineMode: true
                 ) { fraction, _ in
-                    progress(base + fraction * planSpan, "Lokales Modell wird geladen (\(index + 1)/\(Self.computePlans.count), \(plan.name))…")
+                    progress(base + fraction * planSpan, "Lokales Modell wird geladen \(label)…")
                 }
+                verboseLog("Qwen3 models loaded with", plan, started)
 
                 try Task.checkCancellation()
-                progress(base + planSpan, "Modell wird vorbereitet…")
-                try loaded.warmUp()
+                progress(base + planSpan, "Encoder wird geprüft \(label)…")
+                try loaded.encoder.warmUp()
+                verboseLog("Qwen3 encoder warm-up ok with", plan, started)
+                try Task.checkCancellation()
+                progress(base + planSpan, "Decoder wird geprüft \(label)…")
+                try loaded.decoder.warmUp()
+                verboseLog("Qwen3 decoder warm-up ok with", plan, started)
                 try Task.checkCancellation()
                 model = loaded
                 Self.logger.info("Qwen3 model ready with \(plan.name, privacy: .public) compute plan")
