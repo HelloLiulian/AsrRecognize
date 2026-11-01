@@ -70,6 +70,12 @@ extension View {
     func glassCard(padding: CGFloat = 18, radius: CGFloat = 22) -> some View {
         modifier(GlassCard(padding: padding, radius: radius))
     }
+
+    /// Keeps long-form content readable on iPad while leaving iPhone widths untouched.
+    func readableWidth(_ maxWidth: CGFloat = 820) -> some View {
+        frame(maxWidth: maxWidth)
+            .frame(maxWidth: .infinity)
+    }
 }
 
 // MARK: - Text bits

@@ -45,6 +45,7 @@ struct RecordingView: View {
                     preparingState
                 }
             }
+            .readableWidth(880)
             .alert("Keine Sprache erkannt", isPresented: $showEmptyAlert) {
                 Button("Weiter aufnehmen", role: .cancel) {}
                 Button("Verwerfen", role: .destructive) {

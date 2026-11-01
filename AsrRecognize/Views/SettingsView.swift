@@ -30,6 +30,7 @@ struct SettingsView: View {
                 .padding(.horizontal, 22)
                 .padding(.top, 14)
                 .padding(.bottom, 44)
+                .readableWidth(760)
             }
             .scrollIndicators(.hidden)
         }

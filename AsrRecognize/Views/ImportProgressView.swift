@@ -41,6 +41,7 @@ struct ImportProgressView: View {
             .padding(.horizontal, 22)
             .padding(.top, 10)
             .padding(.bottom, 24)
+            .readableWidth(880)
         }
         .preferredColorScheme(.dark)
         .interactiveDismissDisabled(true)

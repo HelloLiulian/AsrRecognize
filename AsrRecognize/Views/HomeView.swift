@@ -79,6 +79,7 @@ struct HomeView: View {
                     .padding(.horizontal, 22)
                     .padding(.top, 10)
                     .padding(.bottom, 24)
+                    .readableWidth(880)
                 }
                 .scrollIndicators(.hidden)
             }
@@ -393,6 +394,7 @@ struct HomeView: View {
         .padding(.horizontal, 22)
         .padding(.top, 14)
         .padding(.bottom, 8)
+        .readableWidth(880)
         .background {
             LinearGradient(
                 colors: [Theme.background.opacity(0), Theme.background.opacity(0.92), Theme.background],

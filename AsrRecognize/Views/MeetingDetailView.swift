@@ -62,6 +62,7 @@ struct MeetingDetailView: View {
                 .padding(.horizontal, 22)
                 .padding(.top, 8)
                 .padding(.bottom, 44)
+                .readableWidth(880)
             }
             .scrollIndicators(.hidden)
         }

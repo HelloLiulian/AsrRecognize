@@ -3,6 +3,7 @@ import Foundation
 enum TranscriptionEngineError: LocalizedError {
     case notPrepared
     case modelMissing
+    case modelLoadFailed
     case emptyResult
     case permissionDenied
     case unsupportedLanguage
@@ -16,6 +17,8 @@ enum TranscriptionEngineError: LocalizedError {
             return "Das lokale Modell ist noch nicht bereit."
         case .modelMissing:
             return "Das lokale Qwen3-Modell ist in dieser App-Version nicht enthalten."
+        case .modelLoadFailed:
+            return "Das lokale Modell konnte auf diesem Gerät nicht geladen werden. Bitte verwenden Sie die System-Spracherkennung."
         case .emptyResult:
             return "Die lokale Erkennung hat keinen Text geliefert."
         case .permissionDenied:

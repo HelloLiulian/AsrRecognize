@@ -36,6 +36,7 @@ struct ImportSetupView: View {
                 .padding(.horizontal, 22)
                 .padding(.top, 14)
                 .padding(.bottom, 36)
+                .readableWidth(720)
             }
             .scrollIndicators(.hidden)
         }

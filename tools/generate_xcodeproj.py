@@ -220,7 +220,7 @@ def build() -> str:
 \t\t\t\tPRODUCT_NAME = "$(TARGET_NAME)";
 \t\t\t\tSWIFT_EMIT_LOC_STRINGS = YES;
 \t\t\t\tSWIFT_VERSION = 5.0;
-\t\t\t\tTARGETED_DEVICE_FAMILY = 1;
+\t\t\t\tTARGETED_DEVICE_FAMILY = "1,2";
 """
 
     content = "// !$*UTF8*$!\n{\n"

@@ -3,6 +3,7 @@
 Eine minimalistische iOS-App für Besprechungsprotokolle im technischen Dark-Design: Live-Transkription oder Import von Audiodateien, lokale Speicherung und optionale KI-Zusammenfassung.
 
 - Durchgehend deutsche Oberfläche inklusive Datums- und Dauerformaten
+- iPhone und iPad (iPad im Hoch- und Querformat, adaptive Inhaltsbreite)
 - SwiftUI + SwiftData + Apple Speech + OpenAI-kompatible KI (Standard: DeepSeek)
 - Optionales lokales Qwen3-ASR (vollständig Core ML, offline), basiert auf speech-swift
 - Import von Audiodateien mit Wiederaufnahme nach Unterbrechung
@@ -17,7 +18,7 @@ Eine minimalistische iOS-App für Besprechungsprotokolle im technischen Dark-Des
 
 1. Den Ordner `AsrRecognize` auf einen Mac kopieren.
 2. `AsrRecognize.xcodeproj` per Doppelklick oder mit Xcode öffnen.
-3. Oben als Scheme **AsrRecognize** und als Ziel einen **iPhone-Simulator** (z. B. iPhone 16) oder ein angeschlossenes Gerät wählen.
+3. Oben als Scheme **AsrRecognize** und als Ziel einen **iPhone- oder iPad-Simulator** (z. B. iPhone 16) oder ein angeschlossenes Gerät wählen.
 4. Mit **⌘R** starten.
 
 **Simulator**: keine Signatur nötig, sofort lauffähig.
@@ -176,7 +177,7 @@ Das ist erwartbar. Die lokale Erkennung arbeitet abschnittsweise; der Fortschrit
 Das Repository enthält nicht das 0,9-GB-Modell. Auf einem Mac `bash tools/prepare-model.sh` ausführen und neu bauen oder den Build mit Modell über GitHub Actions nutzen (siehe unten).
 
 **Q: Unterstützt die App iPad / Querformat?**
-Derzeit nur iPhone im Hochformat, Deployment-Target iOS 18.
+Die App läuft auf iPhone und iPad. Das iPhone bleibt im Hochformat; auf dem iPad sind Hoch- und Querformat sowie Multitasking möglich. Auf großen Bildschirmen wird der Inhalt auf eine lesbare Breite begrenzt und zentriert. Deployment-Target iOS 18.
 
 ---
 
@@ -238,12 +239,12 @@ Repository-Seite öffnen → **Actions** → links **Build AsrRecognize** → **
 
 Hinweis: Das kostenlose Kontingent umfasst etwa 30 Minuten pro Monat und 3 Minuten pro Sitzung. Appetize dient vor allem der Vorschau von Oberfläche und Interaktion; **Mikrofon, Apple Speech und lokale Modellinferenz stehen nicht zur Verfügung**. Für echte Transkription ein Gerät verwenden.
 
-### 4. Auf dem iPhone installieren (Windows + Sideloadly)
+### 4. Auf dem iPhone oder iPad installieren (Windows + Sideloadly)
 
 1. [Sideloadly](https://sideloadly.io) unter Windows installieren.
-2. Das iPhone per USB verbinden und `AsrRecognize-unsigned.ipa` in Sideloadly ziehen.
+2. Das iPhone oder iPad per USB verbinden und `AsrRecognize-unsigned.ipa` in Sideloadly ziehen.
 3. Apple-ID eingeben (kostenloses Konto genügt) und **Start** antippen, um zu signieren und zu installieren.
-4. Nach der ersten Installation am iPhone den Entwicklermodus aktivieren: **Einstellungen → Datenschutz & Sicherheit → Entwicklermodus** einschalten und neu starten.
+4. Nach der ersten Installation den Entwicklermodus aktivieren: **Einstellungen → Datenschutz & Sicherheit → Entwicklermodus** einschalten und neu starten.
 5. Bei „Nicht vertrauenswürdiger Entwickler“: **Einstellungen → Allgemein → VPN & Geräteverwaltung** → der Apple-ID vertrauen.
 
 Mit einer kostenlosen Apple-ID signierte Apps **laufen nach 7 Tagen ab**; danach mit denselben Schritten erneut signieren. Nach der Installation in den Einstellungen die Engine auf **Lokales Qwen3** stellen, um offline zu transkribieren (erster Ladevorgang ca. 1 Minute).
