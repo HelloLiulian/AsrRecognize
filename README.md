@@ -1,212 +1,247 @@
-# 纪要 · AsrRecognize
+# Protokoll
 
-一款极简科技风的 iOS 会议纪要 App：实时语音转写、本地保存、可选 AI 纪要。
+Eine minimalistische iOS-App für Besprechungsprotokolle im technischen Dark-Design: Live-Transkription oder Import von Audiodateien, lokale Speicherung und optionale KI-Zusammenfassung.
 
-- SwiftUI + SwiftData + Apple Speech + DeepSeek
-- 可选本地 Qwen3-ASR（全 Core ML，离线），基于 speech-swift
+- SwiftUI + SwiftData + Apple Speech + OpenAI-kompatible KI (Standard: DeepSeek)
+- Optionales lokales Qwen3-ASR (vollständig Core ML, offline), basiert auf speech-swift
+- Import von Audiodateien mit Wiederaufnahme nach Unterbrechung
 - iOS 18+
-- 深色界面、实时声波、玻璃质感卡片、触觉反馈
+- Dunkle Oberfläche, Live-Wellenform, Glaskarten, haptisches Feedback
 
-> ⚠️ 本工程在 Windows 上生成。iOS App 必须在 macOS + Xcode 中编译运行，Windows 无法直接运行。
+> ⚠️ Dieses Projekt wurde unter Windows erzeugt. Die iOS-App muss auf macOS mit Xcode gebaut werden; unter Windows läuft sie nicht.
 
 ---
 
-## 一、运行（约 1 分钟）
+## Projekt starten (ca. 1 Minute)
 
-1. 把整个 `AsrRecognize` 文件夹复制到 Mac。
-2. 双击 `AsrRecognize.xcodeproj`，或用 Xcode 打开它。
-3. 顶部 Scheme 选择 **AsrRecognize**，运行目标选择 **iPhone 模拟器**（如 iPhone 16）或已连接的真机。
-4. 按 **⌘R** 运行。
+1. Den Ordner `AsrRecognize` auf einen Mac kopieren.
+2. `AsrRecognize.xcodeproj` per Doppelklick oder mit Xcode öffnen.
+3. Oben als Scheme **AsrRecognize** und als Ziel einen **iPhone-Simulator** (z. B. iPhone 16) oder ein angeschlossenes Gerät wählen.
+4. Mit **⌘R** starten.
 
-**模拟器**：无需签名，开箱即用。
-**真机**：选中项目 Target → `Signing & Capabilities` → 勾选 `Automatically manage signing` → 选择你的 Apple ID Team。若提示 Bundle Identifier 被占用，把 `com.liulian.AsrRecognize` 改成 `com.你的名字.AsrRecognize`。
+**Simulator**: keine Signatur nötig, sofort lauffähig.
+**Gerät**: Target auswählen → `Signing & Capabilities` → `Automatically manage signing` aktivieren → Apple-ID-Team wählen. Falls die Bundle-ID belegt ist, `com.liulian.AsrRecognize` in `com.deinName.AsrRecognize` ändern.
 
-### 环境要求
+### Voraussetzungen
 
-| 项目 | 要求 |
+| Komponente | Anforderung |
 | --- | --- |
-| macOS | 14.5 或更新（Xcode 16 的要求） |
-| Xcode | 15 或更新（推荐 16） |
-| 运行系统 | iOS 18.0+（模拟器或真机；本地 Qwen3 引擎需要真机） |
-| 网络 | 语音识别与 AI 纪要需要网络（可切换为设备端识别） |
+| macOS | 14.5 oder neuer (Voraussetzung für Xcode 16) |
+| Xcode | 15 oder neuer (empfohlen: 16) |
+| Laufzeitsystem | iOS 18.0+ (Simulator oder Gerät; das lokale Qwen3-Modell benötigt ein echtes Gerät) |
+| Netzwerk | System-Spracherkennung und KI-Zusammenfassung benötigen Netzwerk (geräteinterne Erkennung ist umschaltbar) |
 
-> 语音识别在模拟器上可能不稳定或不支持，完整体验建议使用真机。
-
----
-
-## 二、首次使用
-
-1. 打开 App，点底部 **开始记录**。
-2. 允许 **麦克风** 与 **语音识别** 权限。
-3. 说话时文字会实时出现在界面中；结束后点 **完成** 保存。
-4. 会议详情页可：
-   - 播放原始录音
-   - 编辑标题
-   - 查看转写原文 / 生成 AI 纪要
-   - 分享 Markdown 纪要
-
-### 配置 DeepSeek（可选，用于 AI 纪要）
-
-1. 首页右上角进入 **设置**。
-2. 点“获取”打开 platform.deepseek.com 创建 API Key。
-3. 粘贴到输入框并点 **保存 API Key**（存放在系统钥匙串）。
-4. 回到任意会议详情页，点 **生成纪要**；也可以在设置中保持“自动生成纪要”开启。
-
-> 只有转写文本会发送到 DeepSeek，音频始终留在本机。
+> Die Spracherkennung kann im Simulator instabil sein oder fehlen. Für den vollen Funktionsumfang ein echtes Gerät verwenden.
 
 ---
 
-## 三、功能说明
+## Erste Schritte
 
-- **实时转写**：Apple Speech 中文/英文识别，每 50 秒自动续接识别任务，长会议不会中断。
-- **录音留存**：以 CAF 格式保存在 App 沙盒 `Documents/Recordings`，可在详情页回放。
-- **本地存储**：会议、转写、纪要使用 SwiftData 持久化；删除会议会同时删除录音。
-- **AI 纪要**：DeepSeek 输出结构化 JSON：摘要、关键要点、待办事项（负责人/截止时间）、会议决议。
-- **搜索**：首页可按标题或转写正文搜索。
-- **隐私**：API Key 存 Keychain；无账号、无云端同步、无统计 SDK。
+1. App öffnen und unten auf **Aufnahme starten** tippen.
+2. Zugriff auf **Mikrofon** und **Spracherkennung** erlauben.
+3. Beim Sprechen erscheint der Text live; **Fertig** speichert das Protokoll.
+4. In der Detailansicht stehen zur Verfügung:
+   - Wiedergabe der Originalaufnahme
+   - Titel bearbeiten
+   - Transkript ansehen / KI-Zusammenfassung erzeugen
+   - Protokoll exportieren oder teilen
 
-### 识别引擎 / 识别语言
+### KI-Anbieter konfigurieren (optional)
 
-设置中可切换两种引擎：
+1. Oben rechts auf der Startseite **Einstellungen** öffnen.
+2. **Basis-URL**, **Modell** und **API-Schlüssel** eintragen. Voreinstellung: `https://api.deepseek.com` und `deepseek-flash`; jeder OpenAI-kompatible Endpunkt funktioniert.
+3. Auf **Speichern** tippen. Der Schlüssel wird im Systemschlüsselbund abgelegt.
+4. In einer Protokoll-Detailansicht **Zusammenfassung** wählen oder in den Einstellungen **Automatisch zusammenfassen** aktiviert lassen.
 
-- **系统语音**：Apple Speech，实时出字，可用“仅设备端识别”减少联网。
-- **本地 Qwen3**：Qwen3-ASR 0.6B 全 Core ML 推理，完全离线；按语音段出字（非逐字），
-  模型约 0.9GB 随 App 打包，首次加载约 1 分钟，需要 iOS 18 与真机（模拟器无 ANE）。
-  模型缺失时录音页会提示并提供“改用系统语音识别”。
-
-识别语言可在中文与 English 之间切换，切换后对下一次录音生效。
+> Es wird ausschließlich das Transkript an den konfigurierten Anbieter gesendet. Audio verlässt das Gerät nicht.
 
 ---
 
-## 四、目录结构
+## Funktionen
+
+- **Live-Transkription**: System-Spracherkennung (Deutsch/Englisch), alle 50 Sekunden wird die Erkennung nahtlos fortgesetzt – auch lange Besprechungen brechen nicht ab.
+- **Aufnahme**: im App-Sandbox-Ordner `Documents/Recordings` (CAF), Wiedergabe in der Detailansicht.
+- **Lokale Speicherung**: Protokolle, Transkripte und Zusammenfassungen liegen in SwiftData; das Löschen eines Protokolls entfernt auch die Aufnahme.
+- **KI-Zusammenfassung**: strukturiertes JSON mit Zusammenfassung, Kernpunkten, Aufgaben (Verantwortlich/Frist) und Beschlüssen.
+- **Suche**: auf der Startseite nach Titel oder Transkripttext.
+- **Audiodateien importieren**: m4a, mp3, wav, caf, aac, aiff, flac – bis 2 Stunden bzw. 1,5 GB, mit Fortschritt, Pause und Wiederaufnahme.
+- **Datenschutz**: API-Schlüssel im Schlüsselbund; kein Konto, keine Cloud-Synchronisierung, kein Tracking-SDK.
+
+### Spracherkennungs-Engines / Sprache
+
+In den Einstellungen stehen zwei Engines zur Wahl:
+
+- **System-Spracherkennung**: Apple Speech, Text in Echtzeit, **Nur auf dem Gerät** reduziert die Netzwerknutzung.
+- **Lokales Qwen3**: Qwen3-ASR 0.6B, vollständige Core-ML-Inferenz, komplett offline. Die Ausgabe erfolgt abschnittsweise (nicht wortweise). Das Modell ist ca. 0,9 GB groß und wird mit der App ausgeliefert; der erste Ladevorgang dauert etwa 1 Minute. Erfordert iOS 18 und ein echtes Gerät (im Simulator fehlt die ANE). Fehlt das Modell, weist die App darauf hin und bietet den Wechsel zur System-Spracherkennung an.
+
+Die Erkennungssprache lässt sich zwischen **Deutsch** und **English** umschalten; die Änderung gilt für die nächste Aufnahme bzw. den nächsten Import.
+
+---
+
+## Audiodateien importieren
+
+1. Auf „Audiodatei importieren“ tippen und eine Datei aus „Dateien“ wählen (m4a, mp3, wav, caf, aac, aiff, flac; maximal 2 Stunden / 1,5 GB).
+2. Engine (Lokales Qwen3 oder System-Spracherkennung) und Sprache wählen.
+3. Die App bleibt geöffnet; bei Unterbrechung kann die Transkription fortgesetzt werden.
+
+## Export
+
+Im Protokoll-Menü „Exportieren“ → „Als Text (.txt)“ oder „Audio exportieren“ (Originalformat).
+
+## Tests
+
+CI führt reine Logiktests aus:
+
+```bash
+bash tools/run-logic-tests.sh
+```
+
+Die Logiktests laufen als temporäres SwiftPM-Paket (`ProtokollLogic`) und benötigen kein iOS-Simulator-Gerät. Der vollständige App-Build wird in GitHub Actions auf `main`, bei manuellem Start oder bei Commits mit `[full-ci]` ausgeführt.
+
+---
+
+## Projektstruktur
 
 ```
 AsrRecognize/
-├── AsrRecognize.xcodeproj        # 工程文件（含共享 Scheme）
+├── AsrRecognize.xcodeproj        # Projektdatei (inkl. geteiltem Scheme)
 ├── AsrRecognize/
-│   ├── App/                      # App 入口、SwiftData 容器
+│   ├── App/                      # App-Einstieg, SwiftData-Container
 │   ├── Views/
-│   │   ├── HomeView.swift        # 会议列表、搜索、统计
-│   │   ├── RecordingView.swift   # 录音与实时转写
+│   │   ├── HomeView.swift        # Protokollliste, Suche, Statistik, Import
+│   │   ├── RecordingView.swift   # Aufnahme und Live-Transkript
+│   │   ├── ImportSetupView.swift # Titel, Engine und Sprache für den Import
+│   │   ├── ImportProgressView.swift # Fortschritt, Pause, Wiederaufnahme
 │   │   ├── MeetingDetailView.swift
 │   │   ├── SummaryContentView.swift
 │   │   └── SettingsView.swift
 │   ├── Services/
-│   │   ├── LiveTranscriber.swift # AVAudioEngine + Speech 实时转写
-│   │   ├── Qwen3/                # 本地 Qwen3-ASR：引擎、VAD、重采样、会话
+│   │   ├── LiveTranscriber.swift # AVAudioEngine + Speech, Live-Transkript
+│   │   ├── AppleChunkEngine.swift # Apple Speech für Dateiabschnitte
+│   │   ├── AudioFileTranscriber.swift # Import-Pipeline mit Checkpoints
+│   │   ├── ImportJobStore.swift  # Auftrags- und Segment-Checkpoints
+│   │   ├── ImportValidation.swift
+│   │   ├── ExportService.swift
+│   │   ├── AISummaryService.swift / AISummaryRequest.swift
+│   │   ├── Qwen3/                # Lokales Qwen3-ASR: Engine, VAD, Resampling, Session
 │   │   ├── AudioPlayer.swift
 │   │   ├── AudioStorage.swift
-│   │   ├── DeepSeekService.swift
 │   │   ├── KeychainStore.swift
 │   │   └── AppSettings.swift
 │   ├── Models/                   # Meeting / MeetingSummary / TranscriptSegment
-│   ├── Design/                   # 主题色、组件、波形
-│   ├── Utilities/                # 格式化、触觉反馈
+│   ├── Design/                   # Theme, Komponenten, Wellenform
+│   ├── Utilities/                # Formatierung, Haptik
 │   ├── Assets.xcassets           # AppIcon / AccentColor
-│   └── Info.plist                # 权限、后台音频、启动屏
+│   └── Info.plist                # Berechtigungen, Hintergrund-Audio, Startbildschirm
+├── ProtokollTests/               # Reine Logiktests (ohne UI)
 ├── tools/
-│   ├── generate_xcodeproj.py     # 重新生成 .xcodeproj
-│   ├── prepare-model.sh          # 下载并编译 Qwen3 CoreML 模型
-│   └── make_icon.py              # 生成 1024 AppIcon
+│   ├── generate_xcodeproj.py     # Erzeugt .xcodeproj neu
+│   ├── run-logic-tests.sh        # Logiktests über SwiftPM
+│   ├── prepare-model.sh          # Lädt und kompiliert das Qwen3-CoreML-Modell
+│   └── make_icon.py              # Erzeugt das 1024er-AppIcon
+├── docs/                         # Entwurf, Plan und Spezifikation
 └── README.md
 ```
 
-工程文件由脚本生成，源文件按目录加入编译。正常使用不需要运行脚本。
+Die Projektdatei wird per Skript erzeugt; Quelldateien werden nach Verzeichnis kompiliert. Für die normale Nutzung ist kein Skriptlauf nötig.
 
 ---
 
-## 五、常见问题
+## Häufige Fragen
 
-**Q：编译报 Signing 错误？**
-真机运行需要在 `Signing & Capabilities` 选择 Team；模拟器不需要。
+**Q: Beim Bauen erscheint ein Signing-Fehler?**
+Für ein echtes Gerät in `Signing & Capabilities` ein Team auswählen; der Simulator benötigt keine Signatur.
 
-**Q：一直显示“正在准备麦克风”？**
-检查系统设置中是否允许了麦克风与语音识别；模拟器请确认 Mac 麦克风可用。
+**Q: Die App hängt bei „Mikrofon wird vorbereitet“?**
+Prüfen, ob Mikrofon- und Spracherkennungszugriff in den Systemeinstellungen erlaubt sind; im Simulator sicherstellen, dass das Mac-Mikrofon verfügbar ist.
 
-**Q：识别不到文字 / 频繁中断？**
-Apple Speech 依赖网络与系统服务。确认网络可用；真机效果更好；可在设置里关闭“仅设备端识别”后重试。
+**Q: Es wird kein Text erkannt / die Erkennung bricht ab?**
+Apple Speech hängt von Netzwerk und Systemdiensten ab. Netzwerk prüfen, ein echtes Gerät verwenden oder **Nur auf dem Gerät** deaktivieren und erneut versuchen.
 
-**Q：AI 纪要报错？**
-常见原因：Key 错误（401）、余额不足（402）、请求过频（429）、网络超时。检查设置后重试。
-单次最多分析约 2 万字，超出部分会被截断，界面会提示。
+**Q: Die KI-Zusammenfassung meldet einen Fehler?**
+Typische Ursachen: falscher Schlüssel (401), unzureichendes Guthaben (402), zu viele Anfragen (429), Zeitüberschreitung. Einstellungen prüfen und erneut versuchen. Pro Anfrage werden etwa 20.000 Zeichen analysiert; darüber hinausgehender Text wird gekürzt und die Oberfläche weist darauf hin.
 
-**Q：数据存在哪里？**
-录音在 App 沙盒 `Documents/Recordings`，会议数据在 SwiftData 数据库，API Key 在 Keychain。卸载 App 会全部清除。
+**Q: Wo liegen die Daten?**
+Aufnahmen im App-Sandbox-Ordner `Documents/Recordings`, Protokolle in der SwiftData-Datenbank, API-Schlüssel im Schlüsselbund. Beim Deinstallieren der App werden alle Daten gelöscht.
 
-**Q：本地 Qwen3 引擎提示“模型未打包”？**
-仓库不包含 0.9GB 模型。在 Mac 上执行 `bash tools/prepare-model.sh` 后重新编译，
-或用 GitHub Actions 的带模型构建（见第七节）。
+**Q: „Unvollständige Transkription“ auf der Startseite?**
+Ein Import wurde unterbrochen (z. B. App beendet). Der Auftrag erscheint als Banner und kann fortgesetzt werden; bereits gespeicherte Abschnitte werden nicht erneut verarbeitet. Über **Verwerfen** lassen sich Auftrag und kopierte Audiodatei entfernen.
 
-**Q：支持 iPad / 横屏吗？**
-当前仅 iPhone 竖屏，部署目标 iOS 18。
+**Q: Der Import dauert länger als die Aufnahme?**
+Das ist erwartbar. Die lokale Erkennung arbeitet abschnittsweise; der Fortschritt und eine Restzeit-Schätzung werden angezeigt. Die App muss während des Imports geöffnet bleiben; ein Wechsel in den Hintergrund pausiert den Auftrag und er kann danach fortgesetzt werden.
+
+**Q: „Modell nicht enthalten“ beim lokalen Qwen3?**
+Das Repository enthält nicht das 0,9-GB-Modell. Auf einem Mac `bash tools/prepare-model.sh` ausführen und neu bauen oder den Build mit Modell über GitHub Actions nutzen (siehe unten).
+
+**Q: Unterstützt die App iPad / Querformat?**
+Derzeit nur iPhone im Hochformat, Deployment-Target iOS 18.
 
 ---
 
-## 六、重新生成工程（可选）
+## Xcode-Projekt neu generieren (optional)
 
 ```bash
 cd AsrRecognize
-python3 tools/generate_xcodeproj.py   # 重写 project.pbxproj 与共享 Scheme
-python3 tools/make_icon.py            # 重新生成 AppIcon（需要 Pillow、numpy）
+python3 tools/generate_xcodeproj.py   # schreibt project.pbxproj und das geteilte Scheme neu
+python3 tools/make_icon.py            # erzeugt das AppIcon neu (benötigt Pillow, numpy)
 ```
 
-如 Xcode 打开工程异常，可先运行生成脚本再重新打开。
+Wenn Xcode das Projekt fehlerhaft öffnet, zuerst das Skript ausführen und das Projekt erneut öffnen.
 
 ---
 
-## 七、零 Mac 方案：GitHub Actions 云构建
+## Ohne Mac: Cloud-Build über GitHub Actions
 
-仓库已包含 `.github/workflows/ios-build.yml`，不需要 Mac，也不需要签名证书。一次构建产出两个作业：
+Das Repository enthält `.github/workflows/ios-build.yml`; weder Mac noch Signaturzertifikat sind nötig. Die Logiktests laufen bei jedem Push. Der App-Build für den Simulator läuft auf `main`, bei manuellem Start oder bei Commits mit `[full-ci]`; der Geräte-Build mit Modell läuft nur auf `main` oder bei manuellem Start.
 
-| Job / Artifact | 内容 | 用途 |
+| Job / Artifact | Inhalt | Zweck |
 | --- | --- | --- |
-| `simulator-app` → `AsrRecognize-simulator-appetize` | 不含模型，Debug 模拟器包，约几十 MB | 上传 Appetize.io，在 Windows 浏览器里操作界面 |
-| `offline-ipa` → `AsrRecognize-unsigned-ipa` | 先下载并编译 Qwen3 模型（约 0.9GB），Release 真机包 | 用 Sideloadly 签名装到 iPhone，可离线转写 |
+| `logic-tests` | SwiftPM-Logiktests ohne UI | Schnelle Regressionprüfung bei jedem Push |
+| `simulator-app` → `AsrRecognize-simulator-appetize` | Debug-Build ohne Modell, einige zehn MB | Hochladen auf Appetize.io, Oberfläche im Browser bedienen |
+| `offline-ipa` → `AsrRecognize-unsigned-ipa` | Lädt und kompiliert das Qwen3-Modell (ca. 0,9 GB), Release-Gerätebuild | Mit Sideloadly signieren und auf dem iPhone installieren, Offline-Transkription |
 
-- 模拟器无 ANE，本地 Qwen3 引擎跑不动，所以模拟器包**不带模型**，默认走系统语音。
-- 带模型的 `offline-ipa` 作业较慢：下载 + coremlcompiler 编译约 20–40 分钟，产物约 0.9GB。
-- 只需要验证编译时，可在 Run workflow 时把 `include_model` 关掉。
+- Der Simulator besitzt keine ANE; das lokale Qwen3-Modell läuft dort nicht. Deshalb enthält das Simulator-Paket **kein Modell** und nutzt die System-Spracherkennung.
+- Der Job mit Modell dauert länger: Download und `coremlcompiler` benötigen etwa 20–40 Minuten, das Artefakt ist ca. 0,9 GB groß.
+- Wenn nur die Kompilierung geprüft werden soll, beim manuellen Start `include_model` deaktivieren.
 
-### 1. 把项目推送到 GitHub
+### 1. Projekt zu GitHub pushen
 
-先在 GitHub 新建一个空仓库（public 或 private），然后在本目录执行：
+Zuerst ein leeres Repository auf GitHub anlegen (öffentlich oder privat), dann im Projektordner:
 
 ```bash
-cd C:\AsrRecognize
 git init
 git add .
-git commit -m "AsrRecognize iOS app"
+git commit -m "Protokoll iOS app"
 git branch -M main
-git remote add origin https://github.com/<你的用户名>/<仓库名>.git
+git remote add origin https://github.com/<benutzername>/<repository>.git
 git push -u origin main
 ```
 
-### 2. 运行云端构建
+### 2. Cloud-Build starten
 
-打开仓库页面 → **Actions** → 左侧 **Build AsrRecognize** → **Run workflow** → 选择 `main` 并运行。
-模拟器作业约 3–6 分钟；带模型作业通常 20–40 分钟（取决于 Hugging Face 下载速度）。完成后在本次运行页面底部的 **Artifacts** 下载：
+Repository-Seite öffnen → **Actions** → links **Build AsrRecognize** → **Run workflow** → `main` wählen und starten. Der Simulator-Job dauert etwa 3–6 Minuten; der Job mit Modell meist 20–40 Minuten (abhängig von der Download-Geschwindigkeit bei Hugging Face). Danach unter **Artifacts** der Ausführung herunterladen:
 
-- `AsrRecognize-simulator-appetize.zip`：解压一次，得到内层 `AsrRecognize-simulator.zip`（里面是 `.app`）
-- `AsrRecognize-unsigned-ipa.zip`：解压一次，得到 `AsrRecognize-unsigned.ipa`
+- `AsrRecognize-simulator-appetize.zip`: einmal entpacken, darin liegt `AsrRecognize-simulator.zip` (mit der `.app`)
+- `AsrRecognize-unsigned-ipa.zip`: einmal entpacken, darin liegt `AsrRecognize-unsigned.ipa`
 
-> GitHub 下载的 Artifact 本身是外层 zip，不要直接把它上传给 Appetize。
+> Das von GitHub heruntergeladene Artifact ist selbst eine ZIP-Datei; nicht direkt bei Appetize hochladen.
 
-> 公开仓库的 Actions 通常免费；私有仓库会消耗 macOS 构建分钟，且 macOS 按 10 倍计费。
+> Actions sind für öffentliche Repositories in der Regel kostenlos; private Repositories verbrauchen macOS-Build-Minuten, die zehnfach abgerechnet werden.
 
-### 3. 浏览器打开（Appetize.io，无需安装到本地）
+### 3. Im Browser öffnen (Appetize.io, ohne lokale Installation)
 
-1. 注册并登录 [Appetize.io](https://appetize.io)。
-2. 点击 **New App** → 平台选 **iOS** → 上传解压后的 `AsrRecognize-simulator.zip`。
-3. 上传完成后打开详情页的链接，即可在浏览器里点按 App。
+1. Bei [Appetize.io](https://appetize.io) registrieren und anmelden.
+2. **New App** → Plattform **iOS** → die entpackte `AsrRecognize-simulator.zip` hochladen.
+3. Nach dem Upload den Link der Detailseite öffnen und die App im Browser bedienen.
 
-注意：免费额度约 30 分钟/月、单次会话 3 分钟；Appetize 主要用来预览界面和交互，**麦克风、Apple Speech 与本地模型推理都不可用**，实时转写请以真机为准。
+Hinweis: Das kostenlose Kontingent umfasst etwa 30 Minuten pro Monat und 3 Minuten pro Sitzung. Appetize dient vor allem der Vorschau von Oberfläche und Interaktion; **Mikrofon, Apple Speech und lokale Modellinferenz stehen nicht zur Verfügung**. Für echte Transkription ein Gerät verwenden.
 
-### 4. 安装到 iPhone（Windows + Sideloadly）
+### 4. Auf dem iPhone installieren (Windows + Sideloadly)
 
-1. 在 Windows 安装 [Sideloadly](https://sideloadly.io)。
-2. iPhone 用 USB 连接电脑，把 `AsrRecognize-unsigned.ipa` 拖入 Sideloadly。
-3. 输入你的 Apple ID（免费账号即可），点 **Start** 签名并安装。
-4. iPhone 首次安装后需开启开发者模式：**设置 → 隐私与安全性 → 开发者模式**，打开并重启。
-5. 若提示“未受信任的开发者”：**设置 → 通用 → VPN 与设备管理** → 信任你的 Apple ID。
+1. [Sideloadly](https://sideloadly.io) unter Windows installieren.
+2. Das iPhone per USB verbinden und `AsrRecognize-unsigned.ipa` in Sideloadly ziehen.
+3. Apple-ID eingeben (kostenloses Konto genügt) und **Start** antippen, um zu signieren und zu installieren.
+4. Nach der ersten Installation am iPhone den Entwicklermodus aktivieren: **Einstellungen → Datenschutz & Sicherheit → Entwicklermodus** einschalten und neu starten.
+5. Bei „Nicht vertrauenswürdiger Entwickler“: **Einstellungen → Allgemein → VPN & Geräteverwaltung** → der Apple-ID vertrauen.
 
-免费 Apple ID 签名的 App **7 天后过期**，到期用同样步骤重新签名即可。安装后在设置里把引擎切到“本地 Qwen3”，即可离线转写（首次加载约 1 分钟）。
+Mit einer kostenlosen Apple-ID signierte Apps **laufen nach 7 Tagen ab**; danach mit denselben Schritten erneut signieren. Nach der Installation in den Einstellungen die Engine auf **Lokales Qwen3** stellen, um offline zu transkribieren (erster Ladevorgang ca. 1 Minute).
