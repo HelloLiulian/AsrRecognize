@@ -55,16 +55,16 @@ actor Qwen3CoreMLEngine: ChunkTranscriptionEngine {
                 ) { fraction, _ in
                     progress(base + fraction * planSpan, "Lokales Modell wird geladen \(label)…")
                 }
-                verboseLog("Qwen3 models loaded with", plan, started)
+                Self.verboseLog("Qwen3 models loaded with", plan, started)
 
                 try Task.checkCancellation()
                 progress(base + planSpan, "Encoder wird geprüft \(label)…")
                 try loaded.encoder.warmUp()
-                verboseLog("Qwen3 encoder warm-up ok with", plan, started)
+                Self.verboseLog("Qwen3 encoder warm-up ok with", plan, started)
                 try Task.checkCancellation()
                 progress(base + planSpan, "Decoder wird geprüft \(label)…")
                 try loaded.decoder.warmUp()
-                verboseLog("Qwen3 decoder warm-up ok with", plan, started)
+                Self.verboseLog("Qwen3 decoder warm-up ok with", plan, started)
                 try Task.checkCancellation()
                 model = loaded
                 Self.logger.info("Qwen3 model ready with \(plan.name, privacy: .public) compute plan")
