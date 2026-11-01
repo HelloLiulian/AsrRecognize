@@ -19,8 +19,8 @@ actor Qwen3CoreMLEngine: ChunkTranscriptionEngine {
     }
 
     private static let computePlans: [ComputePlan] = [
-        .init(name: "ANE", encoder: .cpuAndNeuralEngine, decoder: .cpuAndNeuralEngine),
-        .init(name: "GPU", encoder: .all, decoder: .cpuAndGPU),
+        .init(name: "Neuronale Engine", encoder: .cpuAndNeuralEngine, decoder: .cpuAndNeuralEngine),
+        .init(name: "GPU", encoder: .cpuAndGPU, decoder: .cpuAndGPU),
         .init(name: "CPU", encoder: .cpuOnly, decoder: .cpuOnly),
     ]
 
@@ -33,24 +33,32 @@ actor Qwen3CoreMLEngine: ChunkTranscriptionEngine {
         }
 
         var lastError: Error?
+        let planSpan = 0.86 / Double(Self.computePlans.count)
         for (index, plan) in Self.computePlans.enumerated() {
+            try Task.checkCancellation()
+            let base = 0.02 + planSpan * Double(index)
             do {
-                progress(0.02, index == 0 ? "Lokales Modell wird gelesen…" : "Lokales Modell wird erneut geladen…")
+                progress(base, "Lokales Modell wird geladen (\(index + 1)/\(Self.computePlans.count), \(plan.name))…")
                 let loaded = try await CoreMLASRModel.fromPretrained(
                     encoderComputeUnits: plan.encoder,
                     decoderComputeUnits: plan.decoder,
                     cacheDir: directory,
                     offlineMode: true
                 ) { fraction, _ in
-                    progress(0.02 + fraction * 0.86, "Lokales Modell wird geladen…")
+                    progress(base + fraction * planSpan, "Lokales Modell wird geladen (\(index + 1)/\(Self.computePlans.count), \(plan.name))…")
                 }
 
+                try Task.checkCancellation()
                 progress(0.9, "Modell wird vorbereitet…")
                 try loaded.warmUp()
+                try Task.checkCancellation()
                 model = loaded
                 Self.logger.info("Qwen3 model ready with \(plan.name, privacy: .public) compute plan")
                 progress(1.0, "Modell bereit")
                 return
+            } catch is CancellationError {
+                Self.logger.info("Qwen3 model load cancelled on \(plan.name, privacy: .public)")
+                throw CancellationError()
             } catch {
                 lastError = error
                 Self.logger.error("Qwen3 load failed on \(plan.name, privacy: .public): \(String(describing: error), privacy: .public)")

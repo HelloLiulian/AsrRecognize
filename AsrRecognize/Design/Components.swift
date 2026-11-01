@@ -72,6 +72,7 @@ extension View {
     }
 
     /// Keeps long-form content readable on iPad while leaving iPhone widths untouched.
+    /// Apply before `.background` so full-bleed backgrounds still span the screen.
     func readableWidth(_ maxWidth: CGFloat = 820) -> some View {
         frame(maxWidth: maxWidth)
             .frame(maxWidth: .infinity)
