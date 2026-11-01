@@ -49,14 +49,14 @@ actor Qwen3CoreMLEngine: ChunkTranscriptionEngine {
                 }
 
                 try Task.checkCancellation()
-                progress(0.9, "Modell wird vorbereitet…")
+                progress(base + planSpan, "Modell wird vorbereitet…")
                 try loaded.warmUp()
                 try Task.checkCancellation()
                 model = loaded
                 Self.logger.info("Qwen3 model ready with \(plan.name, privacy: .public) compute plan")
                 progress(1.0, "Modell bereit")
                 return
-            } catch is CancellationError {
+            } catch is CancellationError where Task.isCancelled {
                 Self.logger.info("Qwen3 model load cancelled on \(plan.name, privacy: .public)")
                 throw CancellationError()
             } catch {
