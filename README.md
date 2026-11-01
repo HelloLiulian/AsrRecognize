@@ -2,6 +2,7 @@
 
 Eine minimalistische iOS-App für Besprechungsprotokolle im technischen Dark-Design: Live-Transkription oder Import von Audiodateien, lokale Speicherung und optionale KI-Zusammenfassung.
 
+- Durchgehend deutsche Oberfläche inklusive Datums- und Dauerformaten
 - SwiftUI + SwiftData + Apple Speech + OpenAI-kompatible KI (Standard: DeepSeek)
 - Optionales lokales Qwen3-ASR (vollständig Core ML, offline), basiert auf speech-swift
 - Import von Audiodateien mit Wiederaufnahme nach Unterbrechung
@@ -65,6 +66,7 @@ Eine minimalistische iOS-App für Besprechungsprotokolle im technischen Dark-Des
 - **KI-Zusammenfassung**: strukturiertes JSON mit Zusammenfassung, Kernpunkten, Aufgaben (Verantwortlich/Frist) und Beschlüssen.
 - **Suche**: auf der Startseite nach Titel oder Transkripttext.
 - **Audiodateien importieren**: m4a, mp3, wav, caf, aac, aiff, flac – bis 2 Stunden bzw. 1,5 GB, mit Fortschritt, Pause und Wiederaufnahme.
+- **Export**: Protokoll als Textdatei (`.txt`) oder Originalaudio.
 - **Datenschutz**: API-Schlüssel im Schlüsselbund; kein Konto, keine Cloud-Synchronisierung, kein Tracking-SDK.
 
 ### Spracherkennungs-Engines / Sprache
@@ -159,7 +161,7 @@ Prüfen, ob Mikrofon- und Spracherkennungszugriff in den Systemeinstellungen erl
 Apple Speech hängt von Netzwerk und Systemdiensten ab. Netzwerk prüfen, ein echtes Gerät verwenden oder **Nur auf dem Gerät** deaktivieren und erneut versuchen.
 
 **Q: Die KI-Zusammenfassung meldet einen Fehler?**
-Typische Ursachen: falscher Schlüssel (401), unzureichendes Guthaben (402), zu viele Anfragen (429), Zeitüberschreitung. Einstellungen prüfen und erneut versuchen. Pro Anfrage werden etwa 20.000 Zeichen analysiert; darüber hinausgehender Text wird gekürzt und die Oberfläche weist darauf hin.
+Typische Ursachen: falscher Schlüssel (401), unzureichendes Guthaben (402), zu viele Anfragen (429), Zeitüberschreitung. Einstellungen prüfen und erneut versuchen. Pro Anfrage werden bis zu 120.000 Zeichen analysiert; darüber hinausgehender Text wird gekürzt und die Oberfläche weist darauf hin.
 
 **Q: Wo liegen die Daten?**
 Aufnahmen im App-Sandbox-Ordner `Documents/Recordings`, Protokolle in der SwiftData-Datenbank, API-Schlüssel im Schlüsselbund. Beim Deinstallieren der App werden alle Daten gelöscht.
@@ -192,7 +194,7 @@ Wenn Xcode das Projekt fehlerhaft öffnet, zuerst das Skript ausführen und das 
 
 ## Ohne Mac: Cloud-Build über GitHub Actions
 
-Das Repository enthält `.github/workflows/ios-build.yml`; weder Mac noch Signaturzertifikat sind nötig. Die Logiktests laufen bei jedem Push. Der App-Build für den Simulator läuft auf `main`, bei manuellem Start oder bei Commits mit `[full-ci]`; der Geräte-Build mit Modell läuft nur auf `main` oder bei manuellem Start.
+Das Repository enthält `.github/workflows/ios-build.yml`; weder Mac noch Signaturzertifikat sind nötig. Die Logiktests laufen bei jedem Push auf `main` oder einen `feature/**`-Branch. Der App-Build für den Simulator läuft auf `main`, bei manuellem Start oder bei Commits mit `[full-ci]`; der Geräte-Build mit Modell läuft nur auf `main` oder bei manuellem Start.
 
 | Job / Artifact | Inhalt | Zweck |
 | --- | --- | --- |
