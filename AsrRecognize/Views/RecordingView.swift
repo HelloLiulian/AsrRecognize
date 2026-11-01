@@ -340,6 +340,14 @@ struct RecordingView: View {
                     ProgressView(value: local.loadFraction)
                         .frame(maxWidth: 220)
                 }
+
+                if local.loadStartedAt != nil {
+                    PillButton(title: "System-Spracherkennung verwenden", icon: "waveform", kind: .secondary) {
+                        switchToApple()
+                    }
+                    .padding(.horizontal, 40)
+                    .padding(.top, 4)
+                }
             } else {
                 Text("Mikrofon wird vorbereitet…")
                     .font(.system(size: 15, weight: .medium))

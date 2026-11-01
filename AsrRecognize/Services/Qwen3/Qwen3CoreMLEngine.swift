@@ -11,8 +11,8 @@ actor Qwen3CoreMLEngine: ChunkTranscriptionEngine {
 
     /// Some devices fail to build the ANE execution plan for the palettized
     /// decoder (`error code: -14`), and GPU warm-up can stall indefinitely on
-    /// iPadOS 26. Keep the encoder on ANE and run the decoder on CPU, falling
-    /// back to full CPU before reporting the model as unusable.
+    /// iPadOS 26. Try full ANE first, then keep the encoder on ANE with a CPU
+    /// decoder, and finally fall back to full CPU.
     private struct ComputePlan: Sendable {
         let name: String
         let encoder: MLComputeUnits
@@ -20,6 +20,7 @@ actor Qwen3CoreMLEngine: ChunkTranscriptionEngine {
     }
 
     private static let computePlans: [ComputePlan] = [
+        .init(name: "ANE", encoder: .cpuAndNeuralEngine, decoder: .cpuAndNeuralEngine),
         .init(name: "ANE+CPU", encoder: .cpuAndNeuralEngine, decoder: .cpuOnly),
         .init(name: "CPU", encoder: .cpuOnly, decoder: .cpuOnly),
     ]
