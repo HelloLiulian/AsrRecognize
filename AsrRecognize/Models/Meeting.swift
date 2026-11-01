@@ -11,6 +11,8 @@ final class Meeting {
     var segmentsData: Data
     var summaryData: Data?
     var audioFileName: String?
+    var sourceRaw: String = MeetingSource.recording.rawValue
+    var originalFileName: String?
 
     init(
         id: UUID = UUID(),
@@ -19,7 +21,9 @@ final class Meeting {
         duration: TimeInterval,
         transcript: String,
         segments: [TranscriptSegment] = [],
-        audioFileName: String? = nil
+        audioFileName: String? = nil,
+        source: MeetingSource = .recording,
+        originalFileName: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -29,6 +33,12 @@ final class Meeting {
         self.segmentsData = (try? JSONEncoder().encode(segments)) ?? Data()
         self.summaryData = nil
         self.audioFileName = audioFileName
+        self.sourceRaw = source.rawValue
+        self.originalFileName = originalFileName
+    }
+
+    var source: MeetingSource {
+        MeetingSource(rawValue: sourceRaw) ?? .recording
     }
 
     var segments: [TranscriptSegment] {
@@ -55,7 +65,7 @@ final class Meeting {
         let cleaned = transcript
             .replacingOccurrences(of: "\n", with: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        return cleaned.isEmpty ? "暂无转写文本" : String(cleaned.prefix(90))
+        return cleaned.isEmpty ? "Kein Transkript vorhanden" : String(cleaned.prefix(90))
     }
 
     var hasSummary: Bool {

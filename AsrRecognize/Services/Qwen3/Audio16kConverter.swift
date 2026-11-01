@@ -1,6 +1,6 @@
 import AVFoundation
 
-/// 把麦克风原始 buffer 转成 16kHz / 单声道 / Float32，供 VAD 与识别使用。
+/// Converts raw microphone buffers to 16kHz / mono / Float32 for VAD and recognition.
 final class Audio16kConverter: @unchecked Sendable {
     private let targetFormat: AVAudioFormat
     private var inputFormat: AVAudioFormat?

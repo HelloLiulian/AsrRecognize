@@ -45,14 +45,14 @@ struct RecordingView: View {
                     preparingState
                 }
             }
-            .alert("没有识别到内容", isPresented: $showEmptyAlert) {
-                Button("继续记录", role: .cancel) {}
-                Button("放弃本次", role: .destructive) {
+            .alert("Keine Sprache erkannt", isPresented: $showEmptyAlert) {
+                Button("Weiter aufnehmen", role: .cancel) {}
+                Button("Verwerfen", role: .destructive) {
                     discardSession()
                     dismiss()
                 }
             } message: {
-                Text("麦克风没有捕捉到可用的语音，请靠近麦克风再试。")
+                Text("Das Mikrofon hat keine verwertbare Sprache aufgenommen. Bitte näher am Mikrofon sprechen.")
             }
         }
         .preferredColorScheme(.dark)
@@ -67,17 +67,17 @@ struct RecordingView: View {
                 stopSession()
             }
         }
-        .alert("结束本次记录？", isPresented: $showExitAlert) {
+        .alert("Aufnahme beenden?", isPresented: $showExitAlert) {
             if hasAnyContent {
-                Button("保存并退出") { finish() }
+                Button("Speichern & schließen") { finish() }
             }
-            Button("放弃并退出", role: .destructive) {
+            Button("Verwerfen", role: .destructive) {
                 discardSession()
                 dismiss()
             }
-            Button("继续记录", role: .cancel) {}
+            Button("Weiter aufnehmen", role: .cancel) {}
         } message: {
-            Text("保存后会出现在会议列表中。")
+            Text("Die Aufnahme erscheint anschließend in der Liste.")
         }
     }
 
@@ -102,7 +102,7 @@ struct RecordingView: View {
                     .overlay(Circle().strokeBorder(Theme.stroke, lineWidth: 1))
             }
             .buttonStyle(PressableStyle())
-            .accessibilityLabel("关闭")
+            .accessibilityLabel("Schließen")
 
             Spacer()
 
@@ -117,7 +117,7 @@ struct RecordingView: View {
             Button {
                 finish()
             } label: {
-                Text("完成")
+                Text("Fertig")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Theme.textPrimary)
                     .frame(height: 44)
@@ -126,7 +126,7 @@ struct RecordingView: View {
             .buttonStyle(.plain)
             .disabled(!isRecording && segments.isEmpty)
             .opacity(isRecording || !segments.isEmpty ? 1 : 0.35)
-            .accessibilityLabel("结束并保存")
+            .accessibilityLabel("Beenden & speichern")
         }
         .padding(.horizontal, 22)
         .padding(.top, 8)
@@ -134,9 +134,9 @@ struct RecordingView: View {
 
     private var recorderStatusText: String {
         if isRecording {
-            return isPaused ? "PAUSED" : "REC"
+            return isPaused ? "PAUSIERT" : "REC"
         }
-        return "STANDBY"
+        return "BEREIT"
     }
 
     private var recorderStatusColor: Color {
@@ -184,25 +184,25 @@ struct RecordingView: View {
     private var recognitionLabel: String {
         if usingLocal {
             if local.isDraining {
-                return "本地 · 收尾中"
+                return "Lokal · Abschluss läuft"
             }
             if !local.isPrepared {
                 return local.statusText
             }
-            return settings.languageCode == "en-US" ? "ENGLISH · QWEN3" : "中文 · 本地 Qwen3"
+            return settings.languageCode.hasPrefix("en") ? "ENGLISH · QWEN3" : "Deutsch · Qwen3"
         }
-        if settings.languageCode == "en-US" {
+        if settings.languageCode.hasPrefix("en") {
             return settings.offlineOnly ? "ENGLISH · OFFLINE" : "ENGLISH · LIVE"
         }
-        return settings.offlineOnly ? "中文 · 离线识别" : "中文 · 实时转写"
+        return settings.offlineOnly ? "Deutsch · Offline" : "Deutsch · Live"
     }
 
     private var transcriptPanel: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                SectionLabel(text: "实时转写")
+                SectionLabel(text: "Live-Transkript")
                 Spacer()
-                Text("\(segments.count) 段")
+                Text("\(segments.count) Abschnitte")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
                     .foregroundStyle(Theme.textTertiary)
             }
@@ -211,7 +211,7 @@ struct RecordingView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
                         if segments.isEmpty && partialText.isEmpty {
-                            Text("开始说话，文字会实时出现在这里…")
+                            Text("Sprechen Sie, der Text erscheint hier live…")
                                 .font(.system(size: 14))
                                 .foregroundStyle(Theme.textTertiary)
                                 .padding(.top, 8)
@@ -287,7 +287,7 @@ struct RecordingView: View {
                     .overlay(Circle().strokeBorder(Theme.strokeStrong, lineWidth: 1))
             }
             .buttonStyle(PressableStyle())
-            .accessibilityLabel(isPaused ? "继续录音" : "暂停录音")
+            .accessibilityLabel(isPaused ? "Aufnahme fortsetzen" : "Aufnahme pausieren")
 
             Button {
                 finish()
@@ -307,7 +307,7 @@ struct RecordingView: View {
                 }
             }
             .buttonStyle(PressableStyle())
-            .accessibilityLabel("结束并保存")
+            .accessibilityLabel("Beenden & speichern")
         }
     }
 
@@ -320,7 +320,7 @@ struct RecordingView: View {
                 .tint(Theme.accent)
 
             if usingLocal {
-                Text(local.isPrepared ? "正在准备麦克风…" : "正在加载本地模型…")
+                Text(local.isPrepared ? "Mikrofon wird vorbereitet…" : "Lokales Modell wird geladen…")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(Theme.textSecondary)
                 Text(local.statusText)
@@ -332,10 +332,10 @@ struct RecordingView: View {
                         .frame(maxWidth: 220)
                 }
             } else {
-                Text("正在准备麦克风…")
+                Text("Mikrofon wird vorbereitet…")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(Theme.textSecondary)
-                Text("首次使用需要授权麦克风与语音识别")
+                Text("Beim ersten Start werden Mikrofon- und Spracherkennungszugriff angefragt.")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.textTertiary)
             }
@@ -357,7 +357,7 @@ struct RecordingView: View {
             }
 
             VStack(spacing: 8) {
-                Text("无法开始录音")
+                Text("Aufnahme konnte nicht gestartet werden")
                     .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(Theme.textPrimary)
                 Text(message)
@@ -369,26 +369,26 @@ struct RecordingView: View {
             }
 
             if !segments.isEmpty {
-                Text("已保留 \(segments.count) 段转写内容")
+                Text("\(segments.count) Abschnitte des Transkripts wurden gesichert.")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Theme.textTertiary)
             }
 
             VStack(spacing: 12) {
                 if !segments.isEmpty {
-                    PillButton(title: "保存已有内容", icon: "checkmark") {
+                    PillButton(title: "Vorhandenes Transkript speichern", icon: "checkmark") {
                         saveMeeting()
                     }
                 }
 
                 if usingLocal {
-                    PillButton(title: "改用系统语音识别", icon: "waveform", kind: segments.isEmpty ? .primary : .secondary) {
+                    PillButton(title: "System-Spracherkennung verwenden", icon: "waveform", kind: segments.isEmpty ? .primary : .secondary) {
                         switchToApple()
                     }
                 }
 
                 PillButton(
-                    title: "重试",
+                    title: "Erneut versuchen",
                     icon: "arrow.clockwise",
                     kind: segments.isEmpty && !usingLocal ? .primary : .secondary
                 ) {
@@ -397,7 +397,7 @@ struct RecordingView: View {
                     }
                 }
 
-                PillButton(title: "打开系统设置", icon: "gearshape", kind: .secondary) {
+                PillButton(title: "iOS-Einstellungen öffnen", icon: "gearshape", kind: .secondary) {
                     openSystemSettings()
                 }
             }

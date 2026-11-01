@@ -1168,7 +1168,7 @@ git rm AsrRecognize/Services/DeepSeekService.swift
     }
 
     static let defaultBaseURL = "https://api.deepseek.com"
-    static let defaultModel = "deepseek-chat"
+    static let defaultModel = "deepseek-flash"
 
     @Published var aiBaseURL: String {
         didSet {
@@ -1371,6 +1371,11 @@ gh run watch "$RUN" --exit-status
 ```
 
 Expected: Logic tests PASS；模拟器构建 PASS。
+
+**实现偏差记录：**
+- 网络错误统一映射为德语 `AISummaryError.network`；响应解码失败映射为 `.invalidResponse`。
+- `ChatEnvelope.Message.content` 改为 `String?`，nil/空视为 `.invalidResponse`。
+- 端点切换时的 Key 规则：仅当用户输入的新 Key 与旧端点 Key 不同才写入新端点；否则保留目标端点已存的 Key（同端点时以输入为准）。
 
 ---
 
@@ -2206,6 +2211,11 @@ gh run watch "$RUN" --exit-status
 
 Expected: 模拟器构建 PASS（引擎无法在模拟器识别，但必须能编译）。
 
+**实现说明：**
+- 续体改由可取消的 `RecognitionBox` 持有，任务取消时主动以 `CancellationError` 恢复，即使 Speech 迟迟不回调也不会绕过 60 秒超时。
+- 识别任务在追加音频之前创建，消除了取消早于任务创建导致的漏取消竞态。
+- CI 只编译引擎，实际识别仍需在真机上冒烟验证。
+
 ---
 
 ### Task 10: 音频文件转写流水线
@@ -2477,6 +2487,11 @@ gh run watch "$RUN" --exit-status
 
 Expected: 模拟器构建 PASS。
 
+**实现说明：**
+- 分块级回滚配合原子的 `replaceSegments`，保证 `segments.jsonl` 与 `framesProcessed` 始终一致，失败不会留下检查点之外的片段。
+- 恢复时将 `.failed` 视同 `.paused` 处理，失败后“Erneut versuchen”不再是无响应按钮。
+- 取消会持久化为 `.paused` 以便续传；重试循环不再吞掉取消，也不再重试超时错误。
+
 ---
 
 ### Task 11: 导入设置界面
@@ -2657,6 +2672,10 @@ gh run watch "$RUN" --exit-status
 ```
 
 Expected: 模拟器构建 PASS。
+
+**实现说明：**
+- `onStart` 改为 `(ASREngine, String, String) -> Void`，第三个参数是去空白后的标题（为空时回退到 `job.title`）；否则标题输入框的编辑会被静默丢弃。
+- Task 12 的 `startImport` 需使用该标题更新 `ImportJob` 并持久化，保证断点续传后仍显示用户编辑的名称。
 
 ---
 

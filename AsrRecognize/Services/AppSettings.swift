@@ -13,10 +13,26 @@ final class AppSettings: ObservableObject {
         static let offline = "recognition_offline_only"
         static let autoSummary = "auto_summary"
         static let engine = "recognition_engine"
+        static let aiBaseURL = "ai_base_url"
+        static let aiModel = "ai_model"
+    }
+
+    static let defaultBaseURL = "https://api.deepseek.com"
+    static let defaultModel = "deepseek-flash"
+
+    @Published var aiBaseURL: String {
+        didSet {
+            defaults.set(aiBaseURL, forKey: Keys.aiBaseURL)
+            apiKey = KeychainStore.read(Self.keychainAccount(for: aiBaseURL))
+        }
+    }
+
+    @Published var aiModel: String {
+        didSet { defaults.set(aiModel, forKey: Keys.aiModel) }
     }
 
     @Published var apiKey: String {
-        didSet { KeychainStore.save(apiKey, for: Keys.apiKey) }
+        didSet { KeychainStore.save(apiKey, for: Self.keychainAccount(for: aiBaseURL)) }
     }
 
     @Published var languageCode: String {
@@ -35,13 +51,15 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(engine.rawValue, forKey: Keys.engine) }
     }
 
-    let model = "deepseek-chat"
-
     private let defaults = UserDefaults.standard
 
     init() {
-        apiKey = KeychainStore.read(Keys.apiKey)
-        languageCode = defaults.string(forKey: Keys.language) ?? "zh-CN"
+        let savedLanguage = defaults.string(forKey: Keys.language)
+        if let savedLanguage, savedLanguage != "zh-CN" {
+            languageCode = savedLanguage
+        } else {
+            languageCode = "de-DE"
+        }
         offlineOnly = defaults.bool(forKey: Keys.offline)
         autoSummarize = defaults.object(forKey: Keys.autoSummary) as? Bool ?? true
         if let raw = defaults.string(forKey: Keys.engine), let saved = ASREngine(rawValue: raw) {
@@ -49,6 +67,48 @@ final class AppSettings: ObservableObject {
         } else {
             engine = LocalModelAssets.isBundled ? .qwen : .apple
         }
+
+        let storedBaseURL = defaults.string(forKey: Keys.aiBaseURL) ?? Self.defaultBaseURL
+        aiBaseURL = storedBaseURL
+        aiModel = defaults.string(forKey: Keys.aiModel) ?? Self.defaultModel
+
+        let account = Self.keychainAccount(for: storedBaseURL)
+        let legacyKey = KeychainStore.read(Keys.apiKey)
+        if !legacyKey.isEmpty {
+            if KeychainStore.read(account).isEmpty {
+                KeychainStore.save(legacyKey, for: account)
+            }
+            KeychainStore.delete(Keys.apiKey)
+        }
+        apiKey = KeychainStore.read(account)
+    }
+
+    static func keychainAccount(for baseURL: String) -> String {
+        "ai-key:" + AISummaryRequest.normalizedBaseURL(baseURL)
+    }
+
+    var aiConfiguration: AIConfiguration {
+        AIConfiguration(baseURL: aiBaseURL, model: aiModel, apiKey: apiKey)
+    }
+
+    func applyAIConfiguration(baseURL: String, model: String, key: String) throws {
+        let normalized = AISummaryRequest.normalizedBaseURL(baseURL)
+        _ = try AISummaryRequest.endpointURL(normalized)
+        let trimmedModel = model.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        let previousBase = AISummaryRequest.normalizedBaseURL(aiBaseURL)
+        let previousKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        aiBaseURL = normalized
+        aiModel = trimmedModel.isEmpty ? Self.defaultModel : trimmedModel
+
+        if normalized == previousBase {
+            apiKey = trimmedKey
+        } else if trimmedKey != previousKey {
+            // The user typed a different key for the new endpoint; save it there.
+            apiKey = trimmedKey
+        }
+        // Otherwise keep the key already stored for the target endpoint (loaded by aiBaseURL.didSet).
     }
 
     var hasAPIKey: Bool {
@@ -56,6 +116,6 @@ final class AppSettings: ObservableObject {
     }
 
     var languageTitle: String {
-        languageCode == "en-US" ? "English" : "中文"
+        RecognitionLanguage.title(for: languageCode)
     }
 }

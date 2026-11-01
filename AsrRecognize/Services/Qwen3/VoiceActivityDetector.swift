@@ -1,6 +1,6 @@
 import Foundation
 
-/// 基于能量的流式 VAD：会议室等相对安静环境下可用，不依赖额外模型。
+/// Energy-based streaming VAD: works in relatively quiet environments such as meeting rooms and requires no additional model.
 final class VoiceActivityDetector: @unchecked Sendable {
     struct Configuration {
         var sampleRate: Double = 16_000
@@ -44,7 +44,7 @@ final class VoiceActivityDetector: @unchecked Sendable {
         overlapSamples = Int(configuration.overlapDuration * configuration.sampleRate)
     }
 
-    /// 输入任意长度的 16kHz 采样，返回本次凑齐的完整语音段。
+    /// Accepts 16kHz samples of any length and returns the complete speech segments assembled this time.
     func feed(_ samples: [Float]) -> [[Float]] {
         leftover.append(contentsOf: samples)
 
@@ -63,7 +63,7 @@ final class VoiceActivityDetector: @unchecked Sendable {
         return completed
     }
 
-    /// 录音结束时取出最后一段未闭合语音。
+    /// Returns the last unclosed speech segment when recording ends.
     func flush() -> [Float]? {
         let merged = segment.flatMap { $0 }
         defer { resetSegment() }

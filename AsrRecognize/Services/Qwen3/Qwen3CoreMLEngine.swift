@@ -2,9 +2,9 @@ import CoreML
 import Foundation
 import Qwen3ASR
 
-/// 全 CoreML Qwen3-ASR 引擎：模型从 App 包内离线加载，识别不经由 MLX/Metal。
+/// Pure CoreML Qwen3-ASR engine: the model loads offline from the app bundle; recognition does not go through MLX/Metal.
 actor Qwen3CoreMLEngine: ChunkTranscriptionEngine {
-    nonisolated let displayName = "本地 Qwen3-ASR（Core ML）"
+    nonisolated let displayName = "Lokales Qwen3-ASR (Core ML)"
 
     private var model: CoreMLASRModel?
 
@@ -14,7 +14,7 @@ actor Qwen3CoreMLEngine: ChunkTranscriptionEngine {
             throw TranscriptionEngineError.modelMissing
         }
 
-        progress(0.02, "读取本地模型…")
+        progress(0.02, "Lokales Modell wird gelesen…")
         let loaded = try await CoreMLASRModel.fromPretrained(
             encoderComputeUnits: .cpuAndNeuralEngine,
             decoderComputeUnits: .cpuAndNeuralEngine,
@@ -24,10 +24,10 @@ actor Qwen3CoreMLEngine: ChunkTranscriptionEngine {
             progress(0.02 + fraction * 0.88, message)
         }
 
-        progress(0.92, "预热模型…")
+        progress(0.92, "Modell wird vorbereitet…")
         try loaded.warmUp()
         model = loaded
-        progress(1.0, "模型就绪")
+        progress(1.0, "Modell bereit")
     }
 
     func transcribe(samples: [Float], language: String?) async throws -> String {

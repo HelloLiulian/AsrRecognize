@@ -4,18 +4,30 @@ on:
   workflow_dispatch:
     inputs:
       include_model:
-        description: "Device IPA 是否下载并打包约 0.9GB 的 Qwen3 模型"
+        description: "Qwen3-Modell (ca. 0,9 GB) herunterladen und in die Geräte-IPA packen"
         type: boolean
         default: true
   push:
-    branches: [main]
+    branches: [main, "feature/**"]
 
 permissions:
   contents: read
 
 jobs:
+  logic-tests:
+    name: Logic tests
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run logic tests
+        run: bash tools/run-logic-tests.sh
+
   simulator-app:
     name: Simulator app for Appetize
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || contains(github.event.head_commit.message, '[full-ci]')
     runs-on: macos-15
     timeout-minutes: 60
     steps:
@@ -78,6 +90,7 @@ jobs:
 
   offline-ipa:
     name: Unsigned IPA with Qwen3 model
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: macos-15
     timeout-minutes: 150
     steps:

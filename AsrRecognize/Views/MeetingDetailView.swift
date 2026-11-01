@@ -17,6 +17,13 @@ struct MeetingDetailView: View {
     @State private var showDeleteAlert = false
     @State private var showSettings = false
     @State private var showCopied = false
+    @State private var exportItem: ExportItem?
+    @State private var exportError: String?
+
+    struct ExportItem: Identifiable {
+        let id = UUID()
+        let url: URL
+    }
 
     enum DetailTab: Hashable {
         case summary
@@ -40,8 +47,8 @@ struct MeetingDetailView: View {
                     CapsuleSegmentedControl(
                         selection: $tab,
                         options: [
-                            (value: DetailTab.summary, label: "AI 纪要"),
-                            (value: DetailTab.transcript, label: "原文")
+                            (value: DetailTab.summary, label: "Zusammenfassung"),
+                            (value: DetailTab.transcript, label: "Transkript")
                         ]
                     )
                     .padding(.top, 2)
@@ -85,13 +92,25 @@ struct MeetingDetailView: View {
             SettingsView()
                 .environmentObject(settings)
         }
-        .alert("删除这场会议？", isPresented: $showDeleteAlert) {
-            Button("删除", role: .destructive) {
+        .sheet(item: $exportItem) { item in
+            ActivityView(items: [item.url])
+                .presentationDetents([.medium, .large])
+        }
+        .alert("Export fehlgeschlagen", isPresented: Binding(
+            get: { exportError != nil },
+            set: { if !$0 { exportError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(exportError ?? "")
+        }
+        .alert("Besprechung löschen?", isPresented: $showDeleteAlert) {
+            Button("Löschen", role: .destructive) {
                 deleteMeeting()
             }
-            Button("取消", role: .cancel) {}
+            Button("Abbrechen", role: .cancel) {}
         } message: {
-            Text("转写、纪要与录音将被永久删除，无法恢复。")
+            Text("Transkript, Protokoll und Aufnahme werden dauerhaft gelöscht.")
         }
     }
 
@@ -110,7 +129,7 @@ struct MeetingDetailView: View {
                     .overlay(Circle().strokeBorder(Theme.stroke, lineWidth: 1))
             }
             .buttonStyle(PressableStyle())
-            .accessibilityLabel("返回")
+            .accessibilityLabel("Zurück")
 
             Spacer()
 
@@ -123,13 +142,33 @@ struct MeetingDetailView: View {
                     .overlay(Circle().strokeBorder(Theme.stroke, lineWidth: 1))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("分享纪要")
+            .accessibilityLabel("Protokoll teilen")
 
             Menu {
+                Menu {
+                    Button {
+                        exportText()
+                    } label: {
+                        Label("Als Text (.txt)", systemImage: "doc.text")
+                    }
+                    if meeting.audioURL != nil {
+                        Button {
+                            exportAudio()
+                        } label: {
+                            Label("Audio exportieren", systemImage: "waveform")
+                        }
+                        if audioFileSize > 500_000_000 {
+                            Text("Bei großen Dateien kann der Export einige Sekunden dauern.")
+                        }
+                    }
+                } label: {
+                    Label("Exportieren", systemImage: "square.and.arrow.up.on.square")
+                }
+
                 Button {
                     copyTranscript()
                 } label: {
-                    Label("复制原文", systemImage: "doc.on.doc")
+                    Label("Transkript kopieren", systemImage: "doc.on.doc")
                 }
 
                 Button {
@@ -137,7 +176,7 @@ struct MeetingDetailView: View {
                         await generateSummary()
                     }
                 } label: {
-                    Label("重新生成纪要", systemImage: "sparkles")
+                    Label("Neu zusammenfassen", systemImage: "sparkles")
                 }
                 .disabled(isGenerating)
 
@@ -146,7 +185,7 @@ struct MeetingDetailView: View {
                 Button(role: .destructive) {
                     showDeleteAlert = true
                 } label: {
-                    Label("删除会议", systemImage: "trash")
+                    Label("Besprechung löschen", systemImage: "trash")
                 }
             } label: {
                 Image(systemName: "ellipsis")
@@ -156,7 +195,7 @@ struct MeetingDetailView: View {
                     .background(Circle().fill(Theme.cardFill))
                     .overlay(Circle().strokeBorder(Theme.stroke, lineWidth: 1))
             }
-            .accessibilityLabel("更多操作")
+            .accessibilityLabel("Weitere Aktionen")
         }
     }
 
@@ -164,7 +203,7 @@ struct MeetingDetailView: View {
 
     private var titleBlock: some View {
         VStack(alignment: .leading, spacing: 8) {
-            TextField("会议标题", text: $meeting.title, axis: .vertical)
+            TextField("Titel der Besprechung", text: $meeting.title, axis: .vertical)
                 .font(.system(size: 30, weight: .bold))
                 .tracking(-0.8)
                 .foregroundStyle(Theme.textPrimary)
@@ -176,7 +215,7 @@ struct MeetingDetailView: View {
                     try? modelContext.save()
                 }
 
-            Text("点击标题即可编辑")
+            Text("Tippen Sie auf den Titel, um ihn zu bearbeiten")
                 .font(.system(size: 10, weight: .medium, design: .monospaced))
                 .tracking(0.5)
                 .foregroundStyle(Theme.textTertiary)
@@ -188,7 +227,7 @@ struct MeetingDetailView: View {
         HStack(spacing: 14) {
             Label(AppFormat.meetingDate.string(from: meeting.createdAt), systemImage: "calendar")
             Label(AppFormat.duration(meeting.duration), systemImage: "clock")
-            Label("\(meeting.transcript.count) 字", systemImage: "text.alignleft")
+            Label(AppFormat.characterCount(meeting.transcript.count), systemImage: "text.alignleft")
         }
         .font(.system(size: 10, weight: .medium, design: .monospaced))
         .foregroundStyle(Theme.textTertiary)
@@ -212,7 +251,7 @@ struct MeetingDetailView: View {
                     .overlay(Circle().strokeBorder(Theme.stroke, lineWidth: 1))
             }
             .buttonStyle(PressableStyle())
-            .accessibilityLabel(audio.isPlaying ? "暂停播放" : "播放录音")
+            .accessibilityLabel(audio.isPlaying ? "Wiedergabe pausieren" : "Aufnahme abspielen")
 
             VStack(alignment: .leading, spacing: 6) {
                 GeometryReader { geometry in
@@ -262,7 +301,7 @@ struct MeetingDetailView: View {
             isGenerating: isGenerating,
             errorMessage: summaryError,
             hasAPIKey: settings.hasAPIKey,
-            truncated: meeting.transcript.count > 20000,
+            truncated: meeting.transcript.count > AISummaryRequest.maxCharacters,
             onGenerate: {
                 Task {
                     await generateSummary()
@@ -277,19 +316,19 @@ struct MeetingDetailView: View {
     private var transcriptSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                SectionLabel(text: "原始转写")
+                SectionLabel(text: "Transkript")
 
                 Spacer()
 
                 Button {
                     copyTranscript()
                 } label: {
-                    Label("复制", systemImage: "doc.on.doc")
+                    Label("Kopieren", systemImage: "doc.on.doc")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(Theme.textSecondary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("复制转写原文")
+                .accessibilityLabel("Transkript kopieren")
             }
 
             if meeting.segments.isEmpty {
@@ -314,7 +353,7 @@ struct MeetingDetailView: View {
     @ViewBuilder
     private var copiedToast: some View {
         if showCopied {
-            Text("已复制到剪贴板")
+            Text("In die Zwischenablage kopiert")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Theme.textPrimary)
                 .padding(.horizontal, 16)
@@ -332,15 +371,14 @@ struct MeetingDetailView: View {
     private func generateSummary() async {
         guard !isGenerating else { return }
 
-        let key = settings.apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !key.isEmpty else {
-            summaryError = "请先在设置中填写 DeepSeek API Key。"
+        guard settings.hasAPIKey else {
+            summaryError = "Bitte hinterlegen Sie zuerst einen API-Schlüssel in den Einstellungen."
             return
         }
 
         let transcript = meeting.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !transcript.isEmpty else {
-            summaryError = "这场会议还没有转写内容。"
+            summaryError = "Für diese Besprechung liegt noch kein Transkript vor."
             return
         }
 
@@ -349,7 +387,10 @@ struct MeetingDetailView: View {
         defer { isGenerating = false }
 
         do {
-            let result = try await DeepSeekService.summarize(transcript: transcript, apiKey: key)
+            let result = try await AISummaryService.summarize(
+                transcript: transcript,
+                configuration: settings.aiConfiguration
+            )
             meeting.summary = result
             try? modelContext.save()
             Haptics.success()
@@ -372,6 +413,42 @@ struct MeetingDetailView: View {
         }
     }
 
+    private var audioFileSize: Int64 {
+        guard let url = meeting.audioURL else { return 0 }
+        return (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int64) ?? 0
+    }
+
+    private var exportPayload: ExportPayload {
+        ExportPayload(
+            title: meeting.title,
+            date: meeting.createdAt,
+            duration: meeting.duration,
+            transcript: meeting.transcript,
+            summary: meeting.summary
+        )
+    }
+
+    private func exportText() {
+        do {
+            exportItem = ExportItem(url: try ExportService.writeText(for: exportPayload))
+        } catch {
+            exportError = exportFailureMessage(error)
+        }
+    }
+
+    private func exportAudio() {
+        guard let source = meeting.audioURL else { return }
+        do {
+            exportItem = ExportItem(url: try ExportService.prepareAudio(source: source, title: meeting.title))
+        } catch {
+            exportError = exportFailureMessage(error)
+        }
+    }
+
+    private func exportFailureMessage(_ error: Error) -> String {
+        "Die Datei konnte nicht exportiert werden. Bitte versuchen Sie es erneut."
+    }
+
     private func deleteMeeting() {
         let fileName = meeting.audioFileName
         let context = modelContext
@@ -385,52 +462,6 @@ struct MeetingDetailView: View {
     }
 
     private var shareText: String {
-        var lines: [String] = []
-
-        lines.append("# \(meeting.title)")
-        lines.append("")
-        lines.append("时间：\(AppFormat.meetingDate.string(from: meeting.createdAt)) · 时长：\(AppFormat.duration(meeting.duration))")
-        lines.append("")
-
-        if let summary = meeting.summary, !summary.isEmpty {
-            if !summary.overview.isEmpty {
-                lines.append("## 会议摘要")
-                lines.append(summary.overview)
-                lines.append("")
-            }
-
-            if !summary.keyPoints.isEmpty {
-                lines.append("## 关键要点")
-                lines.append(contentsOf: summary.keyPoints.map { "- \($0)" })
-                lines.append("")
-            }
-
-            if !summary.actionItems.isEmpty {
-                lines.append("## 待办事项")
-                let items = summary.actionItems.map { item -> String in
-                    var parts = [item.task]
-                    if let owner = item.owner, !owner.isEmpty {
-                        parts.append("负责人：\(owner)")
-                    }
-                    if let deadline = item.deadline, !deadline.isEmpty {
-                        parts.append("截止：\(deadline)")
-                    }
-                    return "- " + parts.joined(separator: " · ")
-                }
-                lines.append(contentsOf: items)
-                lines.append("")
-            }
-
-            if !summary.decisions.isEmpty {
-                lines.append("## 会议决议")
-                lines.append(contentsOf: summary.decisions.map { "- \($0)" })
-                lines.append("")
-            }
-        }
-
-        lines.append("## 转写原文")
-        lines.append(meeting.transcript)
-
-        return lines.joined(separator: "\n")
+        ExportService.text(for: exportPayload)
     }
 }

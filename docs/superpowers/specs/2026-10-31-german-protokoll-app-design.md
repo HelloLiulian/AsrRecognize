@@ -240,7 +240,7 @@ AVAudioFile(forReading:)
 `AppSettings` 新增并持久化：
 
 - `aiBaseURL`（UserDefaults，默认 `https://api.deepseek.com`）
-- `aiModel`（UserDefaults，默认 `deepseek-chat`）
+- `aiModel`（UserDefaults，默认 `deepseek-flash`）
 - API Key：Keychain，按端点分账号保存（`account = 规范化后的 Base-URL`），切换端点无需重填；旧字段迁移到默认端点。
 
 规则：
