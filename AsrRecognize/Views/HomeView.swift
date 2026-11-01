@@ -20,6 +20,8 @@ struct HomeView: View {
     @State private var activeImport: PendingImport?
     @State private var resumableJobs: [ImportJob] = []
     @State private var importError: String?
+    @State private var isImportingAudio = false
+    @State private var openedMeeting: Meeting?
 
     struct PendingImport: Identifiable {
         let id = UUID()
@@ -107,6 +109,10 @@ struct HomeView: View {
                     MeetingDetailView(meeting: meeting)
                         .environmentObject(settings)
                 }
+            }
+            .navigationDestination(item: $openedMeeting) { meeting in
+                MeetingDetailView(meeting: meeting)
+                    .environmentObject(settings)
             }
             .fileImporter(
                 isPresented: $showImporter,
@@ -342,6 +348,7 @@ struct HomeView: View {
                 .overlay(Capsule().strokeBorder(Theme.stroke, lineWidth: 1))
             }
             .buttonStyle(PressableStyle())
+            .disabled(isImportingAudio)
             .accessibilityLabel("Audiodatei importieren")
 
             Button {
@@ -441,52 +448,65 @@ struct HomeView: View {
     }
 
     private func importAudio(from url: URL) {
+        guard !isImportingAudio else { return }
+        isImportingAudio = true
+        let engineRaw = settings.engine.rawValue
+        let languageCode = settings.languageCode
+        let offlineOnly = settings.offlineOnly
         Task {
-            let accessed = url.startAccessingSecurityScopedResource()
-            defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+            defer { isImportingAudio = false }
             do {
-                let asset = AVURLAsset(url: url)
-                let duration = try await asset.load(.duration).seconds
-                let size = Int64((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
-                let audioTracks = try await asset.loadTracks(withMediaType: .audio)
-                guard !audioTracks.isEmpty else { throw ImportValidation.Failure.invalid }
-                try ImportValidation.validate(duration: duration, fileSize: size)
+                let pending = try await Task.detached(priority: .userInitiated) { () throws -> PendingImport in
+                    let accessed = url.startAccessingSecurityScopedResource()
+                    defer { if accessed { url.stopAccessingSecurityScopedResource() } }
 
-                // The import copies the file, so peak footprint is twice the source size.
-                let values = try? url.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
-                try ImportValidation.validateAvailableSpace(
-                    required: size * 2,
-                    available: values?.volumeAvailableCapacityForImportantUsage
-                )
+                    let asset = AVURLAsset(url: url)
+                    let duration = try await asset.load(.duration).seconds
+                    let size = Int64((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
+                    let audioTracks = try await asset.loadTracks(withMediaType: .audio)
+                    guard !audioTracks.isEmpty else { throw ImportValidation.Failure.invalid }
+                    try ImportValidation.validate(duration: duration, fileSize: size)
 
-                let destination = AudioStorage.makeImportedFileURL(extension: url.pathExtension)
-                try FileManager.default.copyItem(at: url, to: destination)
+                    // The import copies the file, so peak footprint is twice the source size.
+                    let values = try? url.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+                    try ImportValidation.validateAvailableSpace(
+                        required: size * 2,
+                        available: values?.volumeAvailableCapacityForImportantUsage
+                    )
 
-                let originalName = url.lastPathComponent
-                let title = FilenameSanitizer.sanitize(
-                    url.deletingPathExtension().lastPathComponent,
-                    fallback: "Importierte Aufnahme"
-                )
-                let job = ImportJob(
-                    id: UUID(),
-                    audioFileName: destination.lastPathComponent,
-                    originalFileName: originalName,
-                    title: title,
-                    engine: settings.engine.rawValue,
-                    languageCode: settings.languageCode,
-                    offlineOnly: settings.offlineOnly,
-                    duration: duration,
-                    framesProcessed: 0,
-                    sourceSampleRate: 0,
-                    status: .running,
-                    createdAt: Date()
-                )
-                try await ImportJobStore.shared.create(job)
-                let pending = PendingImport(job: job, audioURL: destination)
+                    let destination = AudioStorage.makeImportedFileURL(extension: url.pathExtension)
+                    try FileManager.default.copyItem(at: url, to: destination)
+
+                    let originalName = url.lastPathComponent
+                    let title = FilenameSanitizer.sanitize(
+                        url.deletingPathExtension().lastPathComponent,
+                        fallback: "Importierte Aufnahme"
+                    )
+                    let job = ImportJob(
+                        id: UUID(),
+                        audioFileName: destination.lastPathComponent,
+                        originalFileName: originalName,
+                        title: title,
+                        engine: engineRaw,
+                        languageCode: languageCode,
+                        offlineOnly: offlineOnly,
+                        duration: duration,
+                        framesProcessed: 0,
+                        sourceSampleRate: 0,
+                        status: .running,
+                        createdAt: Date()
+                    )
+                    try await ImportJobStore.shared.create(job)
+                    return PendingImport(job: job, audioURL: destination)
+                }.value
                 setupImport = pending
                 pendingImport = pending
             } catch {
-                importError = error.localizedDescription
+                if let localized = error as? LocalizedError, let description = localized.errorDescription {
+                    importError = description
+                } else {
+                    importError = "Die Audiodatei konnte nicht importiert werden. Bitte versuchen Sie es erneut."
+                }
             }
         }
     }
@@ -500,6 +520,7 @@ struct HomeView: View {
         setupImport = nil
         startedImport = PendingImport(job: job, audioURL: pending.audioURL)
         pendingImport = nil
+        Task { try? await ImportJobStore.shared.update(job) }
     }
 
     private func handleSetupDismissed() {
@@ -525,6 +546,7 @@ struct HomeView: View {
         let transcript = segments.map(\.text).joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !transcript.isEmpty else {
             importError = "Es wurde kein Text erkannt."
+            discard(job)
             activeImport = nil
             return
         }
@@ -546,7 +568,7 @@ struct HomeView: View {
         }
         activeImport = nil
         Haptics.success()
-        path.append(meeting.id)
+        openedMeeting = meeting
     }
 
     private func cancelImport(_ active: PendingImport) {

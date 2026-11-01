@@ -99,6 +99,9 @@ final class AudioFileTranscriber: ObservableObject {
                 }
             }
 
+            guard generation == expected else { return }
+            if cancelRequested { throw CancellationError() }
+
             let file = try AVAudioFile(forReading: audioURL)
             let format = file.processingFormat
             let totalFrames = file.length
@@ -108,15 +111,17 @@ final class AudioFileTranscriber: ObservableObject {
                 let existing = await store.segments(for: job.id)
                 let resumeTime = Double(job.framesProcessed) / format.sampleRate
                 segments = existing.filter { $0.timestamp < resumeTime }
-                if segments.count != existing.count {
+                if segments.count != existing.count, canPersist(expected) {
                     try await store.replaceSegments(segments, for: job.id)
                 }
             } else {
                 segments = []
                 job.framesProcessed = 0
                 job.sourceSampleRate = format.sampleRate
-                try await store.update(job)
-                try await store.replaceSegments([], for: job.id)
+                if canPersist(expected) {
+                    try await store.update(job)
+                    try await store.replaceSegments([], for: job.id)
+                }
             }
 
             file.framePosition = AVAudioFramePosition(job.framesProcessed)
@@ -125,7 +130,7 @@ final class AudioFileTranscriber: ObservableObject {
             let vad = VoiceActivityDetector()
 
             job.status = .running
-            try await store.update(job)
+            if canPersist(expected) { try await store.update(job) }
             phase = .transcribing
             statusText = ""
             startedAt = Date()
@@ -136,7 +141,7 @@ final class AudioFileTranscriber: ObservableObject {
                 if pauseRequested {
                     job.framesProcessed = framesRead
                     job.status = .paused
-                    try await store.update(job)
+                    if canPersist(expected) { try await store.update(job) }
                     self.job = job
                     pauseRequested = false
                     estimatedRemaining = nil
@@ -169,11 +174,13 @@ final class AudioFileTranscriber: ObservableObject {
                     }
                     framesRead += Int64(buffer.frameLength)
                     job.framesProcessed = framesRead
-                    try await store.update(job)
+                    if canPersist(expected) { try await store.update(job) }
                 } catch {
                     if segments.count > segmentStartIndex {
                         segments.removeSubrange(segmentStartIndex...)
-                        try? await store.replaceSegments(segments, for: job.id)
+                        if canPersist(expected) {
+                            try? await store.replaceSegments(segments, for: job.id)
+                        }
                     }
                     framesRead = chunkStartFrames
                     job.framesProcessed = chunkStartFrames
@@ -200,7 +207,7 @@ final class AudioFileTranscriber: ObservableObject {
 
             job.framesProcessed = totalFrames
             job.status = .finished
-            try await store.update(job)
+            if canPersist(expected) { try await store.update(job) }
             self.job = job
             progress = 1
             processedTime = job.duration
@@ -219,6 +226,12 @@ final class AudioFileTranscriber: ObservableObject {
                 phase = cancelRequested ? .idle : .paused
             }
         } catch {
+            guard generation == expected else { return }
+            if cancelRequested {
+                statusText = ""
+                phase = .idle
+                return
+            }
             if let localized = error as? LocalizedError, let description = localized.errorDescription {
                 errorMessage = description
             } else {
@@ -285,5 +298,9 @@ final class AudioFileTranscriber: ObservableObject {
     private func attemptMemoryThrottle(audioURL: URL) -> Bool {
         let size = (try? FileManager.default.attributesOfItem(atPath: audioURL.path)[.size] as? Int64) ?? 0
         return size > 500_000_000
+    }
+
+    private func canPersist(_ expected: Int) -> Bool {
+        generation == expected && !cancelRequested
     }
 }
