@@ -271,7 +271,7 @@ final class AudioFileTranscriber: ObservableObject {
 
     private func transcribeWithRetry(
         _ samples: [Float],
-        language: String,
+        language: String?,
         engine: ChunkTranscriptionEngine
     ) async throws -> String {
         var attempt = 0
