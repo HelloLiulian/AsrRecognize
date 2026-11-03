@@ -6,7 +6,7 @@ struct SummaryContentView: View {
     let summary: MeetingSummary?
     let isGenerating: Bool
     let errorMessage: String?
-    let hasAPIKey: Bool
+    let canSummarize: Bool
     let truncated: Bool
 
     var onGenerate: () -> Void
@@ -20,7 +20,7 @@ struct SummaryContentView: View {
                 errorCard(errorMessage)
             } else if let summary, !summary.isEmpty {
                 summaryBody(summary)
-            } else if !hasAPIKey {
+            } else if !canSummarize {
                 setupCard
             } else {
                 generateCard
@@ -121,14 +121,14 @@ struct SummaryContentView: View {
                 Text("KI-Protokoll")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Theme.textPrimary)
-                Text("Erstellt mit \(settings.aiModel)")
+                Text("Erstellt mit \(settings.activeModelTitle)")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.textTertiary)
             }
 
             Spacer()
 
-            StatusPill(text: settings.aiModel.uppercased(), color: Theme.accentBright)
+            StatusPill(text: settings.provider.shortTitle.uppercased(), color: Theme.accentBright)
         }
         .padding(.horizontal, 2)
     }
@@ -266,7 +266,7 @@ struct SummaryContentView: View {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .fill(Theme.accent.opacity(0.14))
                         .frame(width: 44, height: 44)
-                    Image(systemName: "key.fill")
+                    Image(systemName: settings.provider == .appleOnDevice ? "iphone.gen3" : "key.fill")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(Theme.accentBright)
                 }
@@ -275,19 +275,25 @@ struct SummaryContentView: View {
                     Text("KI-Protokoll einrichten")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(Theme.textPrimary)
-                    Text("Automatische Zusammenfassung aktivieren")
+                    Text(settings.provider == .appleOnDevice
+                         ? "Auf dem Gerät mit Apple Intelligence"
+                         : "Automatische Zusammenfassung aktivieren")
                         .font(.system(size: 12))
                         .foregroundStyle(Theme.textTertiary)
                 }
             }
 
-            Text("Hinterlegen Sie einen API-Schlüssel. Das Transkript wird dann an den eingestellten Anbieter gesendet und zu einem Protokoll zusammengefasst.")
+            Text(settings.summarySetupMessage)
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.textSecondary)
                 .lineSpacing(4)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            PillButton(title: "API-Schlüssel hinterlegen", icon: "gearshape", action: onOpenSettings)
+            PillButton(
+                title: settings.provider == .appleOnDevice ? "Einstellungen prüfen" : "API-Schlüssel hinterlegen",
+                icon: "gearshape",
+                action: onOpenSettings
+            )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .glassCard()

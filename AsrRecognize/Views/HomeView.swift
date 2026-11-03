@@ -128,8 +128,8 @@ struct HomeView: View {
                 }
             }
             .sheet(item: $pendingImport, onDismiss: handleSetupDismissed) { pending in
-                ImportSetupView(job: pending.job) { engine, language, title in
-                    startImport(pending, engine: engine, language: language, title: title)
+                ImportSetupView(job: pending.job) { language, title in
+                    startImport(pending, language: language, title: title)
                 }
                 .environmentObject(settings)
             }
@@ -452,7 +452,6 @@ struct HomeView: View {
     private func importAudio(from url: URL) {
         guard !isImportingAudio else { return }
         isImportingAudio = true
-        let engineRaw = settings.engine.rawValue
         let languageCode = settings.languageCode
         let offlineOnly = settings.offlineOnly
         Task {
@@ -489,7 +488,7 @@ struct HomeView: View {
                         audioFileName: destination.lastPathComponent,
                         originalFileName: originalName,
                         title: title,
-                        engine: engineRaw,
+                        engine: "apple",
                         languageCode: languageCode,
                         offlineOnly: offlineOnly,
                         duration: duration,
@@ -513,9 +512,9 @@ struct HomeView: View {
         }
     }
 
-    private func startImport(_ pending: PendingImport, engine: ASREngine, language: String, title: String) {
+    private func startImport(_ pending: PendingImport, language: String, title: String) {
         var job = pending.job
-        job.engine = engine.rawValue
+        job.engine = "apple"
         job.languageCode = language
         job.title = title
         job.offlineOnly = settings.offlineOnly

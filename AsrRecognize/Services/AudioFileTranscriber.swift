@@ -255,7 +255,7 @@ final class AudioFileTranscriber: ObservableObject {
         do {
             let text = try await transcribeWithRetry(
                 samples,
-                language: RecognitionLanguage.qwenHint(for: job.languageCode),
+                language: nil,
                 engine: engine
             )
             let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)

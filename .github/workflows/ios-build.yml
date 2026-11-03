@@ -2,11 +2,6 @@ name: Build AsrRecognize
 
 on:
   workflow_dispatch:
-    inputs:
-      include_model:
-        description: "Qwen3-Modell (ca. 0,9 GB) herunterladen und in die Geräte-IPA packen"
-        type: boolean
-        default: true
   push:
     branches: [main, "feature/**"]
 
@@ -40,19 +35,6 @@ jobs:
           if [ -n "$LATEST" ]; then sudo xcode-select -s "$LATEST"; fi
           xcodebuild -version
           uname -m
-
-      - name: Cache Swift packages
-        uses: actions/cache@v4
-        with:
-          path: ~/Library/Caches/org.swift.swiftpm
-          key: spm-${{ runner.os }}-26-${{ hashFiles('AsrRecognize.xcodeproj/project.pbxproj') }}
-          restore-keys: spm-${{ runner.os }}-26-
-
-      - name: Resolve packages
-        run: |
-          xcodebuild -resolvePackageDependencies \
-            -project AsrRecognize.xcodeproj \
-            -scheme AsrRecognize
 
       - name: Build arm64 simulator app
         run: |
@@ -88,11 +70,11 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  offline-ipa:
-    name: Unsigned IPA with Qwen3 model
+  unsigned-ipa:
+    name: Unsigned IPA
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: macos-15
-    timeout-minutes: 150
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -103,31 +85,6 @@ jobs:
           if [ -n "$LATEST" ]; then sudo xcode-select -s "$LATEST"; fi
           xcodebuild -version
           uname -m
-
-      - name: Install Hugging Face CLI
-        run: |
-          python3 -m venv "$RUNNER_TEMP/hf"
-          "$RUNNER_TEMP/hf/bin/pip" install -U huggingface_hub
-          echo "$RUNNER_TEMP/hf/bin" >> "$GITHUB_PATH"
-
-      - name: Prepare Qwen3 CoreML model
-        if: ${{ github.event_name != 'workflow_dispatch' || inputs.include_model }}
-        run: |
-          bash tools/prepare-model.sh AsrRecognize/Resources/Qwen3ASR
-          find AsrRecognize/Resources/Qwen3ASR -maxdepth 1 -mindepth 1 -print
-
-      - name: Cache Swift packages
-        uses: actions/cache@v4
-        with:
-          path: ~/Library/Caches/org.swift.swiftpm
-          key: spm-${{ runner.os }}-26-${{ hashFiles('AsrRecognize.xcodeproj/project.pbxproj') }}
-          restore-keys: spm-${{ runner.os }}-26-
-
-      - name: Resolve packages
-        run: |
-          xcodebuild -resolvePackageDependencies \
-            -project AsrRecognize.xcodeproj \
-            -scheme AsrRecognize
 
       - name: Build device app without signing
         run: |

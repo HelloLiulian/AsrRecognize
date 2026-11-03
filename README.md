@@ -4,10 +4,10 @@ Eine minimalistische iOS-App für Besprechungsprotokolle im technischen Dark-Des
 
 - Durchgehend deutsche Oberfläche inklusive Datums- und Dauerformaten
 - iPhone und iPad (iPad im Hoch- und Querformat, adaptive Inhaltsbreite)
-- SwiftUI + SwiftData + Apple Speech + OpenAI-kompatible KI (Standard: DeepSeek)
-- Optionales lokales Qwen3-ASR (vollständig Core ML, offline), basiert auf speech-swift
+- SwiftUI + SwiftData + Apple Speech
+- KI-Zusammenfassung mit Anbieter-Auswahl: **Mistral AI (EU, Standard)**, **Apple Intelligence auf dem Gerät** oder optional **DeepSeek** für Nicht-EU-Märkte
 - Import von Audiodateien mit Wiederaufnahme nach Unterbrechung
-- iOS 18+
+- iOS 18+ (Apple Intelligence erfordert iOS 26 und ein unterstütztes Gerät)
 - Dunkle Oberfläche, Live-Wellenform, Glaskarten, haptisches Feedback
 
 > ⚠️ Dieses Projekt wurde unter Windows erzeugt. Die iOS-App muss auf macOS mit Xcode gebaut werden; unter Windows läuft sie nicht.
@@ -29,9 +29,9 @@ Eine minimalistische iOS-App für Besprechungsprotokolle im technischen Dark-Des
 | Komponente | Anforderung |
 | --- | --- |
 | macOS | 14.5 oder neuer (Voraussetzung für Xcode 16) |
-| Xcode | 15 oder neuer (empfohlen: 16) |
-| Laufzeitsystem | iOS 18.0+ (Simulator oder Gerät; das lokale Qwen3-Modell benötigt ein echtes Gerät) |
-| Netzwerk | System-Spracherkennung und KI-Zusammenfassung benötigen Netzwerk (geräteinterne Erkennung ist umschaltbar) |
+| Xcode | 16 oder neuer (für Apple Intelligence: Xcode 26) |
+| Laufzeitsystem | iOS 18.0+ (Apple Intelligence auf dem Gerät: iOS 26 + unterstütztes Gerät) |
+| Netzwerk | System-Spracherkennung und Cloud-KI benötigen Netzwerk (geräteinterne Erkennung ist umschaltbar; Apple Intelligence läuft offline) |
 
 > Die Spracherkennung kann im Simulator instabil sein oder fehlen. Für den vollen Funktionsumfang ein echtes Gerät verwenden.
 
@@ -51,11 +51,15 @@ Eine minimalistische iOS-App für Besprechungsprotokolle im technischen Dark-Des
 ### KI-Anbieter konfigurieren (optional)
 
 1. Oben rechts auf der Startseite **Einstellungen** öffnen.
-2. **Basis-URL**, **Modell** und **API-Schlüssel** eintragen. Voreinstellung: `https://api.deepseek.com` und `deepseek-flash`; jeder OpenAI-kompatible Endpunkt funktioniert.
-3. Auf **Speichern** tippen. Der Schlüssel wird im Systemschlüsselbund abgelegt.
+2. Unter **KI-ANBIETER** einen Anbieter wählen:
+   - **Mistral AI (EU)** – Standard, `https://api.eu.mistral.ai/v1` mit `mistral-large-latest`. Inferenz in der EU; AVV/DPA mit Mistral abschließen.
+   - **Apple (auf dem Gerät)** – Apple Intelligence, ohne API-Schlüssel. Das Transkript verlässt das Gerät nicht. Erfordert iOS 26, ein unterstütztes Gerät und aktivierte Apple Intelligence.
+   - **DeepSeek** – optional für Nicht-EU-Märkte, `https://api.deepseek.com` mit `deepseek-chat`. **Nicht für personenbezogene Daten in der EU geeignet**, da die Verarbeitung in China stattfindet.
+   - **Eigener Endpunkt** – jeder OpenAI-kompatible Endpunkt.
+3. Bei Cloud-Anbietern **Basis-URL**, **Modell** und **API-Schlüssel** prüfen und **Speichern** tippen. Die Konfiguration und der Schlüssel werden pro Anbieter getrennt gespeichert.
 4. In einer Protokoll-Detailansicht **Zusammenfassung** wählen oder in den Einstellungen **Automatisch zusammenfassen** aktiviert lassen.
 
-> Es wird ausschließlich das Transkript an den konfigurierten Anbieter gesendet. Audio verlässt das Gerät nicht.
+> Bei Cloud-Anbietern wird ausschließlich das Transkript gesendet. Audio verlässt das Gerät nicht. Bei Apple Intelligence bleiben Transkript und Protokoll vollständig lokal; lange Besprechungen werden in Abschnitte aufgeteilt und zweistufig zusammengefasst.
 
 ---
 
@@ -70,12 +74,9 @@ Eine minimalistische iOS-App für Besprechungsprotokolle im technischen Dark-Des
 - **Export**: Protokoll als Textdatei (`.txt`) oder Originalaudio.
 - **Datenschutz**: API-Schlüssel im Schlüsselbund; kein Konto, keine Cloud-Synchronisierung, kein Tracking-SDK.
 
-### Spracherkennungs-Engines / Sprache
+### Spracherkennung / Sprache
 
-In den Einstellungen stehen zwei Engines zur Wahl:
-
-- **System-Spracherkennung**: Apple Speech, Text in Echtzeit, **Nur auf dem Gerät** reduziert die Netzwerknutzung.
-- **Lokales Qwen3**: Qwen3-ASR 0.6B, vollständige Core-ML-Inferenz, komplett offline. Die Ausgabe erfolgt abschnittsweise (nicht wortweise). Das Modell ist ca. 0,9 GB groß und wird mit der App ausgeliefert; der erste Ladevorgang dauert etwa 1 Minute. Erfordert iOS 18 und ein echtes Gerät (im Simulator fehlt die ANE). Fehlt das Modell, weist die App darauf hin und bietet den Wechsel zur System-Spracherkennung an.
+Die App verwendet ausschließlich die **System-Spracherkennung** von Apple Speech – live und beim Import. Die Option **Nur auf dem Gerät** hält die Erkennung offline; ohne diese Option kann Apple die Erkennung auf seinen Servern durchführen. Die App bündelt kein lokales ASR-Modell mehr.
 
 Die Erkennungssprache lässt sich zwischen **Deutsch** und **English** umschalten; die Änderung gilt für die nächste Aufnahme bzw. den nächsten Import.
 
@@ -84,7 +85,7 @@ Die Erkennungssprache lässt sich zwischen **Deutsch** und **English** umschalte
 ## Audiodateien importieren
 
 1. Auf „Audiodatei importieren“ tippen und eine Datei aus „Dateien“ wählen (m4a, mp3, wav, caf, aac, aiff, flac; maximal 2 Stunden / 1,5 GB).
-2. Engine (Lokales Qwen3 oder System-Spracherkennung) und Sprache wählen.
+2. Titel und Sprache prüfen und die Transkription starten.
 3. Die App bleibt geöffnet; bei Unterbrechung kann die Transkription fortgesetzt werden.
 
 ## Export
@@ -113,7 +114,7 @@ AsrRecognize/
 │   ├── Views/
 │   │   ├── HomeView.swift        # Protokollliste, Suche, Statistik, Import
 │   │   ├── RecordingView.swift   # Aufnahme und Live-Transkript
-│   │   ├── ImportSetupView.swift # Titel, Engine und Sprache für den Import
+│   │   ├── ImportSetupView.swift # Titel und Sprache für den Import
 │   │   ├── ImportProgressView.swift # Fortschritt, Pause, Wiederaufnahme
 │   │   ├── MeetingDetailView.swift
 │   │   ├── SummaryContentView.swift
@@ -125,8 +126,10 @@ AsrRecognize/
 │   │   ├── ImportJobStore.swift  # Auftrags- und Segment-Checkpoints
 │   │   ├── ImportValidation.swift
 │   │   ├── ExportService.swift
+│   │   ├── AIProvider.swift      # Anbieter-Presets (Mistral EU, Apple lokal, DeepSeek, Custom)
 │   │   ├── AISummaryService.swift / AISummaryRequest.swift
-│   │   ├── Qwen3/                # Lokales Qwen3-ASR: Engine, VAD, Resampling, Session
+│   │   ├── AppleFoundationSummarizer.swift # Apple Intelligence, zweistufige Zusammenfassung
+│   │   ├── AudioProcessing/      # Chunk-Engine-Protokoll, 16-kHz-Resampling, VAD
 │   │   ├── AudioPlayer.swift
 │   │   ├── AudioStorage.swift
 │   │   ├── KeychainStore.swift
@@ -140,7 +143,6 @@ AsrRecognize/
 ├── tools/
 │   ├── generate_xcodeproj.py     # Erzeugt .xcodeproj neu
 │   ├── run-logic-tests.sh        # Logiktests über SwiftPM
-│   ├── prepare-model.sh          # Lädt und kompiliert das Qwen3-CoreML-Modell
 │   └── make_icon.py              # Erzeugt das 1024er-AppIcon
 ├── docs/                         # Entwurf, Plan und Spezifikation
 └── README.md
@@ -162,7 +164,13 @@ Prüfen, ob Mikrofon- und Spracherkennungszugriff in den Systemeinstellungen erl
 Apple Speech hängt von Netzwerk und Systemdiensten ab. Netzwerk prüfen, ein echtes Gerät verwenden oder **Nur auf dem Gerät** deaktivieren und erneut versuchen.
 
 **Q: Die KI-Zusammenfassung meldet einen Fehler?**
-Typische Ursachen: falscher Schlüssel (401), unzureichendes Guthaben (402), zu viele Anfragen (429), Zeitüberschreitung. Einstellungen prüfen und erneut versuchen. Pro Anfrage werden bis zu 120.000 Zeichen analysiert; darüber hinausgehender Text wird gekürzt und die Oberfläche weist darauf hin.
+Bei Cloud-Anbietern: falscher Schlüssel (401), unzureichendes Guthaben (402), zu viele Anfragen (429), Zeitüberschreitung. Einstellungen prüfen und erneut versuchen. Pro Anfrage werden bis zu 120.000 Zeichen analysiert; darüber hinausgehender Text wird gekürzt und die Oberfläche weist darauf hin.
+
+**Q: Apple Intelligence wird als nicht verfügbar angezeigt?**
+Die lokale KI benötigt iOS 26, ein unterstütztes Gerät (iPhone 15 Pro oder neuer, iPad mit M-Chip) und aktivierte Apple Intelligence in den iOS-Einstellungen. Alternativ einen Cloud-Anbieter wie Mistral AI (EU) wählen.
+
+**Q: Warum ist DeepSeek nicht vorausgewählt?**
+DeepSeek verarbeitet Daten in China. Für personenbezogene Daten in der EU ist der Anbieter daher nicht geeignet. Standard ist Mistral AI mit EU-Inferenz; DeepSeek bleibt für Nicht-EU-Märkte als Option erhalten.
 
 **Q: Wo liegen die Daten?**
 Aufnahmen im App-Sandbox-Ordner `Documents/Recordings`, Protokolle in der SwiftData-Datenbank, API-Schlüssel im Schlüsselbund. Beim Deinstallieren der App werden alle Daten gelöscht.
@@ -171,10 +179,7 @@ Aufnahmen im App-Sandbox-Ordner `Documents/Recordings`, Protokolle in der SwiftD
 Ein Import wurde unterbrochen (z. B. App beendet). Der Auftrag erscheint als Banner und kann fortgesetzt werden; bereits gespeicherte Abschnitte werden nicht erneut verarbeitet. Über **Verwerfen** lassen sich Auftrag und kopierte Audiodatei entfernen.
 
 **Q: Der Import dauert länger als die Aufnahme?**
-Das ist erwartbar. Die lokale Erkennung arbeitet abschnittsweise; der Fortschritt und eine Restzeit-Schätzung werden angezeigt. Die App muss während des Imports geöffnet bleiben; ein Wechsel in den Hintergrund pausiert den Auftrag und er kann danach fortgesetzt werden.
-
-**Q: „Modell nicht enthalten“ beim lokalen Qwen3?**
-Das Repository enthält nicht das 0,9-GB-Modell. Auf einem Mac `bash tools/prepare-model.sh` ausführen und neu bauen oder den Build mit Modell über GitHub Actions nutzen (siehe unten).
+Das ist erwartbar. Die Erkennung arbeitet abschnittsweise; der Fortschritt und eine Restzeit-Schätzung werden angezeigt. Die App muss während des Imports geöffnet bleiben; ein Wechsel in den Hintergrund pausiert den Auftrag und er kann danach fortgesetzt werden.
 
 **Q: Unterstützt die App iPad / Querformat?**
 Die App läuft auf iPhone und iPad. Das iPhone bleibt im Hochformat; auf dem iPad sind Hoch- und Querformat sowie Multitasking möglich. Auf großen Bildschirmen wird der Inhalt auf eine lesbare Breite begrenzt und zentriert. Deployment-Target iOS 18.
@@ -195,17 +200,16 @@ Wenn Xcode das Projekt fehlerhaft öffnet, zuerst das Skript ausführen und das 
 
 ## Ohne Mac: Cloud-Build über GitHub Actions
 
-Das Repository enthält `.github/workflows/ios-build.yml`; weder Mac noch Signaturzertifikat sind nötig. Die Logiktests laufen bei jedem Push auf `main` oder einen `feature/**`-Branch. Der App-Build für den Simulator läuft auf `main`, bei manuellem Start oder bei Commits mit `[full-ci]`; der Geräte-Build mit Modell läuft nur auf `main` oder bei manuellem Start.
+Das Repository enthält `.github/workflows/ios-build.yml`; weder Mac noch Signaturzertifikat sind nötig. Die Logiktests laufen bei jedem Push auf `main` oder einen `feature/**`-Branch. Der App-Build für den Simulator läuft auf `main`, bei manuellem Start oder bei Commits mit `[full-ci]`; die unsignierte Geräte-IPA läuft auf `main` oder bei manuellem Start.
 
 | Job / Artifact | Inhalt | Zweck |
 | --- | --- | --- |
 | `logic-tests` | SwiftPM-Logiktests ohne UI | Schnelle Regressionprüfung bei jedem Push |
-| `simulator-app` → `AsrRecognize-simulator-appetize` | Debug-Build ohne Modell, einige zehn MB | Hochladen auf Appetize.io, Oberfläche im Browser bedienen |
-| `offline-ipa` → `AsrRecognize-unsigned-ipa` | Lädt und kompiliert das Qwen3-Modell (ca. 0,9 GB), Release-Gerätebuild | Mit Sideloadly signieren und auf dem iPhone installieren, Offline-Transkription |
+| `simulator-app` → `AsrRecognize-simulator-appetize` | Debug-Build, einige zehn MB | Hochladen auf Appetize.io, Oberfläche im Browser bedienen |
+| `unsigned-ipa` → `AsrRecognize-unsigned-ipa` | Release-Gerätebuild ohne Signatur | Mit Sideloadly signieren und auf dem iPhone installieren |
 
-- Der Simulator besitzt keine ANE; das lokale Qwen3-Modell läuft dort nicht. Deshalb enthält das Simulator-Paket **kein Modell** und nutzt die System-Spracherkennung.
-- Der Job mit Modell dauert länger: Download und `coremlcompiler` benötigen etwa 20–40 Minuten, das Artefakt ist ca. 0,9 GB groß.
-- Wenn nur die Kompilierung geprüft werden soll, beim manuellen Start `include_model` deaktivieren.
+- Die App bündelt kein Modell mehr; alle Builds sind klein und laufen in wenigen Minuten durch.
+- Apple Intelligence ist im Simulator nicht verfügbar. Für die lokale Zusammenfassung ein unterstütztes Gerät mit iOS 26 verwenden; im Simulator einen Cloud-Anbieter konfigurieren.
 
 ### 1. Projekt zu GitHub pushen
 
@@ -222,7 +226,7 @@ git push -u origin main
 
 ### 2. Cloud-Build starten
 
-Repository-Seite öffnen → **Actions** → links **Build AsrRecognize** → **Run workflow** → `main` wählen und starten. Der Simulator-Job dauert etwa 3–6 Minuten; der Job mit Modell meist 20–40 Minuten (abhängig von der Download-Geschwindigkeit bei Hugging Face). Danach unter **Artifacts** der Ausführung herunterladen:
+Repository-Seite öffnen → **Actions** → links **Build AsrRecognize** → **Run workflow** → `main` wählen und starten. Beide Build-Jobs dauern in der Regel 3–6 Minuten. Danach unter **Artifacts** der Ausführung herunterladen:
 
 - `AsrRecognize-simulator-appetize.zip`: einmal entpacken, darin liegt `AsrRecognize-simulator.zip` (mit der `.app`)
 - `AsrRecognize-unsigned-ipa.zip`: einmal entpacken, darin liegt `AsrRecognize-unsigned.ipa`
@@ -237,7 +241,7 @@ Repository-Seite öffnen → **Actions** → links **Build AsrRecognize** → **
 2. **New App** → Plattform **iOS** → die entpackte `AsrRecognize-simulator.zip` hochladen.
 3. Nach dem Upload den Link der Detailseite öffnen und die App im Browser bedienen.
 
-Hinweis: Das kostenlose Kontingent umfasst etwa 30 Minuten pro Monat und 3 Minuten pro Sitzung. Appetize dient vor allem der Vorschau von Oberfläche und Interaktion; **Mikrofon, Apple Speech und lokale Modellinferenz stehen nicht zur Verfügung**. Für echte Transkription ein Gerät verwenden.
+Hinweis: Das kostenlose Kontingent umfasst etwa 30 Minuten pro Monat und 3 Minuten pro Sitzung. Appetize dient vor allem der Vorschau von Oberfläche und Interaktion; **Mikrofon, Apple Speech und Apple Intelligence stehen nicht zur Verfügung**. Für echte Transkription ein Gerät verwenden.
 
 ### 4. Auf dem iPhone oder iPad installieren (Windows + Sideloadly)
 
@@ -247,4 +251,4 @@ Hinweis: Das kostenlose Kontingent umfasst etwa 30 Minuten pro Monat und 3 Minut
 4. Nach der ersten Installation den Entwicklermodus aktivieren: **Einstellungen → Datenschutz & Sicherheit → Entwicklermodus** einschalten und neu starten.
 5. Bei „Nicht vertrauenswürdiger Entwickler“: **Einstellungen → Allgemein → VPN & Geräteverwaltung** → der Apple-ID vertrauen.
 
-Mit einer kostenlosen Apple-ID signierte Apps **laufen nach 7 Tagen ab**; danach mit denselben Schritten erneut signieren. Nach der Installation in den Einstellungen die Engine auf **Lokales Qwen3** stellen, um offline zu transkribieren (erster Ladevorgang ca. 1 Minute).
+Mit einer kostenlosen Apple-ID signierte Apps **laufen nach 7 Tagen ab**; danach mit denselben Schritten erneut signieren. Nach der Installation in den Einstellungen die Transkription auf **Nur auf dem Gerät** stellen, um ohne Netzwerk zu erkennen.

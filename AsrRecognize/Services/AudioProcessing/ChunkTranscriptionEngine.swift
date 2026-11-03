@@ -2,8 +2,6 @@ import Foundation
 
 enum TranscriptionEngineError: LocalizedError {
     case notPrepared
-    case modelMissing
-    case modelLoadFailed
     case emptyResult
     case permissionDenied
     case unsupportedLanguage
@@ -14,19 +12,15 @@ enum TranscriptionEngineError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notPrepared:
-            return "Das lokale Modell ist noch nicht bereit."
-        case .modelMissing:
-            return "Das lokale Qwen3-Modell ist in dieser App-Version nicht enthalten."
-        case .modelLoadFailed:
-            return "Das lokale Modell konnte auf diesem Gerät nicht geladen werden. Bitte verwenden Sie die System-Spracherkennung."
+            return "Die Spracherkennung ist noch nicht bereit."
         case .emptyResult:
-            return "Die lokale Erkennung hat keinen Text geliefert."
+            return "Die Erkennung hat keinen Text geliefert."
         case .permissionDenied:
             return "Spracherkennung ist nicht erlaubt. Bitte in den iOS-Einstellungen aktivieren."
         case .unsupportedLanguage:
             return "Für diese Sprache ist keine Spracherkennung verfügbar."
         case .offlineUnavailable:
-            return "Die deutsche Offline-Erkennung ist auf diesem Gerät nicht verfügbar."
+            return "Die Offline-Erkennung ist auf diesem Gerät für diese Sprache nicht verfügbar."
         case .serviceUnavailable:
             return "Die Spracherkennung ist derzeit nicht verfügbar. Bitte prüfen Sie die Internetverbindung."
         case .timeout:
@@ -41,25 +35,4 @@ protocol ChunkTranscriptionEngine: AnyObject, Sendable {
     func prepare(progress: @escaping @Sendable (Double, String) -> Void) async throws
     func transcribe(samples: [Float], language: String?) async throws -> String
     func unload() async
-}
-
-/// Checks whether the full model is bundled in the app (only when the CI build includes the model).
-enum LocalModelAssets {
-    static var directory: URL? {
-        Bundle.main.url(forResource: "Qwen3ASR", withExtension: nil)
-    }
-
-    static var isBundled: Bool {
-        guard let directory else { return false }
-        let required = [
-            "encoder.mlmodelc",
-            "embedding.mlmodelc",
-            "decoder_part1.mlmodelc",
-            "decoder_part2.mlmodelc",
-            "vocab.json",
-        ]
-        return required.allSatisfy {
-            FileManager.default.fileExists(atPath: directory.appendingPathComponent($0).path)
-        }
-    }
 }

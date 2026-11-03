@@ -21,7 +21,7 @@ final class ImportJobStoreTests: XCTestCase {
             audioFileName: "audio.m4a",
             originalFileName: "Original.m4a",
             title: "Teamrunde",
-            engine: "qwen",
+            engine: "apple",
             languageCode: "de-DE",
             offlineOnly: true,
             duration: 120,

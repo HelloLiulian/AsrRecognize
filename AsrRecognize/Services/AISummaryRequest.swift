@@ -12,6 +12,8 @@ enum AISummaryError: LocalizedError {
     case invalidResponse
     case network
     case server(String)
+    case onDeviceUnavailable(String)
+    case onDeviceFailed
 
     var errorDescription: String? {
         switch self {
@@ -25,6 +27,10 @@ enum AISummaryError: LocalizedError {
             return "Die Verbindung zum KI-Anbieter ist fehlgeschlagen. Bitte prüfen Sie Ihre Internetverbindung."
         case .server(let message):
             return message
+        case .onDeviceUnavailable(let message):
+            return message
+        case .onDeviceFailed:
+            return "Die lokale KI konnte das Protokoll nicht erstellen. Bitte versuchen Sie es erneut oder wechseln Sie den Anbieter."
         }
     }
 }
@@ -110,5 +116,41 @@ enum AISummaryRequest {
         let fallback = content.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !fallback.isEmpty else { throw AISummaryError.invalidResponse }
         return MeetingSummary(overview: fallback)
+    }
+}
+
+/// Splits a transcript into chunks that fit the on-device model's context window.
+enum OnDeviceTranscriptChunker {
+    static let chunkSize = 3_000
+    static let maxChunks = 6
+
+    static func chunks(for text: String) -> (chunks: [String], truncated: Bool) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return ([], false) }
+
+        var result: [String] = []
+        var index = trimmed.startIndex
+
+        while index < trimmed.endIndex, result.count < maxChunks {
+            let hardEnd = trimmed.index(index, offsetBy: chunkSize, limitedBy: trimmed.endIndex)
+                ?? trimmed.endIndex
+            var end = hardEnd
+            if hardEnd < trimmed.endIndex,
+               let breakIndex = trimmed[index..<hardEnd].lastIndex(where: { $0 == "\n" || $0 == " " }),
+               breakIndex > index {
+                end = breakIndex
+            }
+
+            let piece = trimmed[index..<end].trimmingCharacters(in: .whitespacesAndNewlines)
+            if !piece.isEmpty {
+                result.append(piece)
+            }
+            index = end
+            while index < trimmed.endIndex, trimmed[index].isWhitespace {
+                index = trimmed.index(after: index)
+            }
+        }
+
+        return (result, index < trimmed.endIndex)
     }
 }

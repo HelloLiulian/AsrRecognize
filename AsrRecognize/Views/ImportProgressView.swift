@@ -17,15 +17,10 @@ struct ImportProgressView: View {
     @State private var showCancelAlert = false
 
     private var engine: ChunkTranscriptionEngine {
-        switch ASREngine(rawValue: job.engine) ?? .apple {
-        case .qwen:
-            return Qwen3CoreMLEngine()
-        case .apple:
-            return AppleChunkEngine(
-                localeIdentifier: RecognitionLanguage.appleLocale(for: job.languageCode),
-                offlineOnly: job.offlineOnly
-            )
-        }
+        AppleChunkEngine(
+            localeIdentifier: RecognitionLanguage.appleLocale(for: job.languageCode),
+            offlineOnly: job.offlineOnly
+        )
     }
 
     var body: some View {
@@ -191,15 +186,6 @@ struct ImportProgressView: View {
                 PillButton(title: "Erneut versuchen", icon: "arrow.clockwise") {
                     transcriber.resume()
                 }
-                if job.engine == ASREngine.qwen.rawValue {
-                    PillButton(
-                        title: "System-Spracherkennung verwenden",
-                        icon: "waveform",
-                        kind: .secondary
-                    ) {
-                        retryWithApple()
-                    }
-                }
                 Button {
                     showCancelAlert = true
                 } label: {
@@ -235,20 +221,5 @@ struct ImportProgressView: View {
             }
         }
         .padding(.top, 16)
-    }
-
-    private func retryWithApple() {
-        var updated = job
-        updated.engine = ASREngine.apple.rawValue
-        updated.framesProcessed = transcriber.framesProcessed
-        transcriber.start(
-            job: updated,
-            audioURL: audioURL,
-            engine: AppleChunkEngine(
-                localeIdentifier: RecognitionLanguage.appleLocale(for: job.languageCode),
-                offlineOnly: job.offlineOnly
-            ),
-            resume: updated.framesProcessed > 0
-        )
     }
 }

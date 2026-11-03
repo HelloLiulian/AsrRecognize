@@ -85,7 +85,7 @@ struct MeetingDetailView: View {
             guard settings.autoSummarize,
                   meeting.summary == nil,
                   !meeting.transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                  settings.hasAPIKey
+                  settings.canSummarize
             else { return }
             await generateSummary()
         }
@@ -301,8 +301,8 @@ struct MeetingDetailView: View {
             summary: meeting.summary,
             isGenerating: isGenerating,
             errorMessage: summaryError,
-            hasAPIKey: settings.hasAPIKey,
-            truncated: meeting.transcript.count > AISummaryRequest.maxCharacters,
+            canSummarize: settings.canSummarize,
+            truncated: summaryTruncated,
             onGenerate: {
                 Task {
                     await generateSummary()
@@ -312,6 +312,13 @@ struct MeetingDetailView: View {
                 showSettings = true
             }
         )
+    }
+
+    private var summaryTruncated: Bool {
+        if settings.provider == .appleOnDevice {
+            return OnDeviceTranscriptChunker.chunks(for: meeting.transcript).truncated
+        }
+        return meeting.transcript.count > AISummaryRequest.maxCharacters
     }
 
     private var transcriptSection: some View {
@@ -372,8 +379,8 @@ struct MeetingDetailView: View {
     private func generateSummary() async {
         guard !isGenerating else { return }
 
-        guard settings.hasAPIKey else {
-            summaryError = "Bitte hinterlegen Sie zuerst einen API-Schlüssel in den Einstellungen."
+        guard settings.canSummarize else {
+            summaryError = settings.summarySetupMessage
             return
         }
 
@@ -390,6 +397,7 @@ struct MeetingDetailView: View {
         do {
             let result = try await AISummaryService.summarize(
                 transcript: transcript,
+                provider: settings.provider,
                 configuration: settings.aiConfiguration
             )
             meeting.summary = result

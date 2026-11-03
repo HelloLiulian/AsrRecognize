@@ -5,17 +5,15 @@ struct ImportSetupView: View {
     @EnvironmentObject private var settings: AppSettings
 
     let job: ImportJob
-    let onStart: (ASREngine, String, String) -> Void
+    let onStart: (String, String) -> Void
 
     @State private var title: String
-    @State private var engine: ASREngine
     @State private var languageCode: String
 
-    init(job: ImportJob, onStart: @escaping (ASREngine, String, String) -> Void) {
+    init(job: ImportJob, onStart: @escaping (String, String) -> Void) {
         self.job = job
         self.onStart = onStart
         _title = State(initialValue: job.title)
-        _engine = State(initialValue: ASREngine(rawValue: job.engine) ?? .apple)
         _languageCode = State(initialValue: job.languageCode)
     }
 
@@ -28,7 +26,6 @@ struct ImportSetupView: View {
                     header
                     fileCard
                     titleField
-                    engineSection
                     languageSection
                     hint
                     actions
@@ -41,11 +38,6 @@ struct ImportSetupView: View {
             .scrollIndicators(.hidden)
         }
         .preferredColorScheme(.dark)
-        .onAppear {
-            if engine == .qwen, !LocalModelAssets.isBundled {
-                engine = .apple
-            }
-        }
     }
 
     private var header: some View {
@@ -102,24 +94,6 @@ struct ImportSetupView: View {
         }
     }
 
-    private var engineSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            SectionLabel(text: "SPRACHERKENNUNG")
-            Picker("Spracherkennung", selection: $engine) {
-                Text("System-Spracherkennung").tag(ASREngine.apple)
-                Text("Lokales Qwen3").tag(ASREngine.qwen)
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .disabled(!LocalModelAssets.isBundled)
-            if !LocalModelAssets.isBundled {
-                Text("Das lokale Modell ist in dieser App-Version nicht enthalten.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Theme.textTertiary)
-            }
-        }
-    }
-
     private var languageSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             SectionLabel(text: "SPRACHE")
@@ -133,7 +107,7 @@ struct ImportSetupView: View {
     }
 
     private var hint: some View {
-        Text("Bitte lassen Sie die App während der Transkription geöffnet. Bei langen Dateien kann die lokale Erkennung deutlich länger dauern als die Aufnahme.")
+        Text("Bitte lassen Sie die App während der Transkription geöffnet. Bei langen Dateien kann die Transkription länger dauern als die Aufnahme.")
             .font(.system(size: 11))
             .foregroundStyle(Theme.textTertiary)
             .lineSpacing(3)
@@ -142,10 +116,9 @@ struct ImportSetupView: View {
     private var actions: some View {
         VStack(spacing: 10) {
             PillButton(title: "Transkription starten", icon: "waveform") {
-                settings.engine = engine
                 settings.languageCode = languageCode
                 let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-                onStart(engine, languageCode, trimmedTitle.isEmpty ? job.title : trimmedTitle)
+                onStart(languageCode, trimmedTitle.isEmpty ? job.title : trimmedTitle)
                 dismiss()
             }
             Button("Abbrechen") { dismiss() }

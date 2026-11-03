@@ -41,9 +41,11 @@ struct SettingsView: View {
         .onAppear {
             guard !didLoad else { return }
             didLoad = true
-            draftBaseURL = settings.aiBaseURL
-            draftModel = settings.aiModel
-            draftKey = settings.apiKey
+            syncDrafts()
+        }
+        .onChange(of: settings.provider) { _, _ in
+            syncDrafts()
+            aiError = nil
         }
     }
 
@@ -88,27 +90,99 @@ struct SettingsView: View {
             SectionLabel(text: "KI-ANBIETER")
 
             VStack(alignment: .leading, spacing: 14) {
-                labeledField("Basis-URL", text: $draftBaseURL, placeholder: "https://api.openai.com/v1", secure: false)
-                labeledField("Modell", text: $draftModel, placeholder: "gpt-4o-mini", secure: false)
-                labeledField("API-Schlüssel", text: $draftKey, placeholder: "sk-…", secure: true)
+                ForEach(AIProvider.allCases) { provider in
+                    providerRow(provider)
+                }
 
-                if let aiError {
-                    Text(aiError)
+                Divider()
+                    .overlay(Theme.stroke)
+
+                if settings.provider.requiresAPIKey {
+                    labeledField("Basis-URL", text: $draftBaseURL, placeholder: settings.provider.defaultBaseURL, secure: false)
+                    labeledField("Modell", text: $draftModel, placeholder: settings.provider.defaultModel, secure: false)
+                    labeledField("API-Schlüssel", text: $draftKey, placeholder: "sk-…", secure: true)
+
+                    if let aiError {
+                        Text(aiError)
+                            .font(.system(size: 11))
+                            .foregroundStyle(Theme.record)
+                    }
+
+                    PillButton(title: "Speichern", icon: "checkmark") {
+                        saveAI()
+                    }
+
+                    Text("Der Schlüssel wird pro Anbieter im Schlüsselbund gespeichert. Bei der KI-Zusammenfassung wird ausschließlich das Transkript an diesen Anbieter gesendet.")
                         .font(.system(size: 11))
-                        .foregroundStyle(Theme.record)
-                }
+                        .foregroundStyle(Theme.textTertiary)
+                        .lineSpacing(3)
+                } else {
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "iphone.gen3")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Theme.accentBright)
+                            .padding(.top, 1)
+                        Text(settings.canSummarize
+                             ? "Die lokale KI ist verfügbar. Es wird kein API-Schlüssel benötigt."
+                             : AISummaryService.onDeviceAvailabilityMessage)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Theme.textSecondary)
+                            .lineSpacing(3)
+                    }
 
-                PillButton(title: "Speichern", icon: "checkmark") {
-                    saveAI()
+                    Text("Das Transkript verlässt das Gerät nicht. Für lange Besprechungen wird es in Abschnitte aufgeteilt.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.textTertiary)
+                        .lineSpacing(3)
                 }
-
-                Text("Der Schlüssel wird im Schlüsselbund gespeichert. Bei der KI-Zusammenfassung wird ausschließlich das Transkript an diesen Anbieter gesendet.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Theme.textTertiary)
-                    .lineSpacing(3)
             }
             .glassCard()
         }
+    }
+
+    private func providerRow(_ provider: AIProvider) -> some View {
+        Button {
+            settings.provider = provider
+            syncDrafts()
+            aiError = nil
+            Haptics.tap()
+        } label: {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: settings.provider == provider ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(settings.provider == provider ? Theme.accentBright : Theme.textTertiary)
+                    .padding(.top, 1)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(provider.title)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Theme.textPrimary)
+
+                    Text(provider.detail)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.textTertiary)
+                        .lineSpacing(2)
+
+                    if let warning = provider.warning, settings.provider == provider {
+                        Text(warning)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(Theme.warning)
+                            .lineSpacing(2)
+                    }
+                }
+
+                Spacer()
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(settings.provider == provider ? .isSelected : [])
+    }
+
+    private func syncDrafts() {
+        draftBaseURL = settings.aiBaseURL
+        draftModel = settings.aiModel
+        draftKey = settings.apiKey
     }
 
     private func labeledField(_ title: String, text: Binding<String>, placeholder: String, secure: Bool) -> some View {
@@ -164,11 +238,25 @@ struct SettingsView: View {
                     .overlay(Theme.stroke)
 
                 HStack {
+                    Text("Anbieter")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Theme.textPrimary)
+                    Spacer()
+                    Text(settings.provider.shortTitle)
+                        .font(.system(size: 12, weight: .medium, design: .monospaced))
+                        .foregroundStyle(Theme.textTertiary)
+                }
+                .padding(.vertical, 14)
+
+                Divider()
+                    .overlay(Theme.stroke)
+
+                HStack {
                     Text("Modell")
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(Theme.textPrimary)
                     Spacer()
-                    Text(settings.aiModel)
+                    Text(settings.activeModelTitle)
                         .font(.system(size: 12, weight: .medium, design: .monospaced))
                         .foregroundStyle(Theme.accentBright)
                 }
@@ -193,21 +281,6 @@ struct SettingsView: View {
             SectionLabel(text: "SPRACHERKENNUNG")
 
             VStack(alignment: .leading, spacing: 14) {
-                Picker("Spracherkennung", selection: $settings.engine) {
-                    Text("System-Spracherkennung").tag(ASREngine.apple)
-                    Text("Lokales Qwen3").tag(ASREngine.qwen)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-
-                Text(engineDescription)
-                    .font(.system(size: 11))
-                    .foregroundStyle(Theme.textTertiary)
-                    .lineSpacing(3)
-
-                Divider()
-                    .overlay(Theme.stroke)
-
                 Text("Sprache")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(Theme.textPrimary)
@@ -218,6 +291,11 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
+
+                Text("Verwendet die System-Spracherkennung von Apple. Mit „Nur auf dem Gerät“ bleibt die Erkennung offline; ohne diese Option kann Apple die Erkennung auf seinen Servern durchführen.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.textTertiary)
+                    .lineSpacing(3)
 
                 Divider()
                     .overlay(Theme.stroke)
@@ -241,16 +319,6 @@ struct SettingsView: View {
             }
             .glassCard()
         }
-    }
-
-    private var engineDescription: String {
-        if settings.engine == .qwen {
-            guard LocalModelAssets.isBundled else {
-                return "Diese App-Version enthält kein lokales Modell. Beim Start wird die System-Spracherkennung empfohlen."
-            }
-            return "Vollständig offline, Audio bleibt auf dem Gerät. Modell ca. 0,9 GB, erster Start ca. 1 Minute, nur iOS 18 und echtes Gerät."
-        }
-        return "Verwendet Apple Speech. Mit „Nur auf dem Gerät“ kann offline erkannt werden."
     }
 
     // MARK: - About

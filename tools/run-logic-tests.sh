@@ -11,6 +11,7 @@ FILES=(
   "AsrRecognize/Models/TranscriptSegment.swift"
   "AsrRecognize/Models/MeetingSummary.swift"
   "AsrRecognize/Services/RecognitionLanguage.swift"
+  "AsrRecognize/Services/AIProvider.swift"
   "AsrRecognize/Services/ExportService.swift"
   "AsrRecognize/Services/ImportJobStore.swift"
   "AsrRecognize/Services/ImportValidation.swift"

@@ -1,10 +1,36 @@
 import Foundation
 
 enum AISummaryService {
+    static var isOnDeviceAvailable: Bool {
+        AppleFoundationSummarizer.isAvailable
+    }
+
+    static var onDeviceAvailabilityMessage: String {
+        AppleFoundationSummarizer.availabilityMessage
+    }
+
     static func summarize(
         transcript: String,
+        provider: AIProvider,
         configuration: AIConfiguration,
         session: URLSession = .shared
+    ) async throws -> MeetingSummary {
+        switch provider {
+        case .appleOnDevice:
+            return try await AppleFoundationSummarizer.summarize(transcript: transcript)
+        case .mistral, .deepSeek, .custom:
+            return try await summarizeCloud(
+                transcript: transcript,
+                configuration: configuration,
+                session: session
+            )
+        }
+    }
+
+    private static func summarizeCloud(
+        transcript: String,
+        configuration: AIConfiguration,
+        session: URLSession
     ) async throws -> MeetingSummary {
         let request = try AISummaryRequest.make(configuration: configuration, transcript: transcript)
         let data: Data

@@ -8,22 +8,20 @@ struct RecordingView: View {
     @EnvironmentObject private var settings: AppSettings
 
     @StateObject private var transcriber = LiveTranscriber()
-    @StateObject private var local = LocalTranscriber()
 
     @State private var didStart = false
     @State private var showExitAlert = false
     @State private var showEmptyAlert = false
 
-    private var usingLocal: Bool { settings.engine == .qwen }
-    private var isRecording: Bool { usingLocal ? local.isRecording : transcriber.isRecording }
-    private var isPaused: Bool { usingLocal ? local.isPaused : transcriber.isPaused }
-    private var elapsed: TimeInterval { usingLocal ? local.elapsed : transcriber.elapsed }
-    private var segments: [TranscriptSegment] { usingLocal ? local.segments : transcriber.segments }
-    private var partialText: String { usingLocal ? local.partialText : transcriber.partialText }
-    private var level: CGFloat { usingLocal ? local.level : transcriber.level }
-    private var errorMessage: String? { usingLocal ? local.errorMessage : transcriber.errorMessage }
-    private var startDate: Date? { usingLocal ? local.startDate : transcriber.startDate }
-    private var audioFileName: String? { usingLocal ? local.audioFileName : transcriber.audioFileName }
+    private var isRecording: Bool { transcriber.isRecording }
+    private var isPaused: Bool { transcriber.isPaused }
+    private var elapsed: TimeInterval { transcriber.elapsed }
+    private var segments: [TranscriptSegment] { transcriber.segments }
+    private var partialText: String { transcriber.partialText }
+    private var level: CGFloat { transcriber.level }
+    private var errorMessage: String? { transcriber.errorMessage }
+    private var startDate: Date? { transcriber.startDate }
+    private var audioFileName: String? { transcriber.audioFileName }
 
     private var hasAnyContent: Bool {
         !segments.isEmpty
@@ -183,15 +181,6 @@ struct RecordingView: View {
     }
 
     private var recognitionLabel: String {
-        if usingLocal {
-            if local.isDraining {
-                return "Lokal · Abschluss läuft"
-            }
-            if !local.isPrepared {
-                return local.statusText
-            }
-            return settings.languageCode.hasPrefix("en") ? "ENGLISH · QWEN3" : "Deutsch · Qwen3"
-        }
         if settings.languageCode.hasPrefix("en") {
             return settings.offlineOnly ? "ENGLISH · OFFLINE" : "ENGLISH · LIVE"
         }
@@ -320,42 +309,12 @@ struct RecordingView: View {
                 .controlSize(.large)
                 .tint(Theme.accent)
 
-            if usingLocal {
-                Text(local.isPrepared ? "Mikrofon wird vorbereitet…" : "Lokales Modell wird geladen…")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(Theme.textSecondary)
-                Text(local.statusText)
-                    .font(.system(size: 12))
-                    .foregroundStyle(Theme.textTertiary)
-
-                if let started = local.loadStartedAt, !local.isPrepared {
-                    TimelineView(.periodic(from: .now, by: 1)) { context in
-                        Text("Wartezeit: \(Int(context.date.timeIntervalSince(started))) s")
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundStyle(Theme.textTertiary)
-                    }
-                }
-
-                if local.loadFraction > 0, local.loadFraction < 1 {
-                    ProgressView(value: local.loadFraction)
-                        .frame(maxWidth: 220)
-                }
-
-                if local.loadStartedAt != nil {
-                    PillButton(title: "System-Spracherkennung verwenden", icon: "waveform", kind: .secondary) {
-                        switchToApple()
-                    }
-                    .padding(.horizontal, 40)
-                    .padding(.top, 4)
-                }
-            } else {
-                Text("Mikrofon wird vorbereitet…")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(Theme.textSecondary)
-                Text("Beim ersten Start werden Mikrofon- und Spracherkennungszugriff angefragt.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Theme.textTertiary)
-            }
+            Text("Mikrofon wird vorbereitet…")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Theme.textSecondary)
+            Text("Beim ersten Start werden Mikrofon- und Spracherkennungszugriff angefragt.")
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.textTertiary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -398,16 +357,10 @@ struct RecordingView: View {
                     }
                 }
 
-                if usingLocal {
-                    PillButton(title: "System-Spracherkennung verwenden", icon: "waveform", kind: segments.isEmpty ? .primary : .secondary) {
-                        switchToApple()
-                    }
-                }
-
                 PillButton(
                     title: "Erneut versuchen",
                     icon: "arrow.clockwise",
-                    kind: segments.isEmpty && !usingLocal ? .primary : .secondary
+                    kind: segments.isEmpty ? .primary : .secondary
                 ) {
                     Task {
                         await startSession()
@@ -428,12 +381,6 @@ struct RecordingView: View {
 
     private func finish() {
         guard isRecording || !segments.isEmpty else { return }
-        guard !(usingLocal && local.isDraining) else { return }
-
-        if isRecording, usingLocal {
-            Task { await finishLocal() }
-            return
-        }
 
         if isRecording {
             guard hasAnyContent else {
@@ -447,65 +394,26 @@ struct RecordingView: View {
         saveMeeting()
     }
 
-    private func finishLocal() async {
-        guard !local.isDraining else { return }
-        await local.stopAndFinish()
-        guard !segments.isEmpty else {
-            Haptics.warning()
-            showEmptyAlert = true
-            return
-        }
-        saveMeeting()
-    }
-
     // MARK: - Session
 
     private func startSession() async {
-        if usingLocal {
-            await local.start(language: settings.languageCode)
-        } else {
-            await transcriber.start(language: settings.languageCode, offlineOnly: settings.offlineOnly)
-        }
+        await transcriber.start(language: settings.languageCode, offlineOnly: settings.offlineOnly)
     }
 
     private func stopSession() {
-        if usingLocal {
-            local.stopImmediately()
-        } else {
-            transcriber.stop()
-        }
+        transcriber.stop()
     }
 
     private func pauseSession() {
-        if usingLocal {
-            local.pause()
-        } else {
-            transcriber.pause()
-        }
+        transcriber.pause()
     }
 
     private func resumeSession() {
-        if usingLocal {
-            local.resume()
-        } else {
-            transcriber.resume()
-        }
+        transcriber.resume()
     }
 
     private func discardSession() {
-        if usingLocal {
-            local.discard()
-        } else {
-            transcriber.discard()
-        }
-    }
-
-    private func switchToApple() {
-        local.discard()
-        settings.engine = .apple
-        Task {
-            await transcriber.start(language: settings.languageCode, offlineOnly: settings.offlineOnly)
-        }
+        transcriber.discard()
     }
 
     private func saveMeeting() {
