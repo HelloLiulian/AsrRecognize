@@ -64,7 +64,7 @@ final class AppSettings: ObservableObject {
         } else {
             languageCode = "de-DE"
         }
-        offlineOnly = defaults.bool(forKey: Keys.offline)
+        offlineOnly = defaults.object(forKey: Keys.offline) as? Bool ?? true
         autoSummarize = defaults.object(forKey: Keys.autoSummary) as? Bool ?? true
 
         let legacyBase = defaults.string(forKey: Keys.legacyBaseURL)
@@ -77,7 +77,7 @@ final class AppSettings: ObservableObject {
                 ? .deepSeek
                 : .custom
         } else {
-            initialProvider = .mistral
+            initialProvider = .appleOnDevice
         }
         provider = initialProvider
 

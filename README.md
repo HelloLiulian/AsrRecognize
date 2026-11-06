@@ -1,4 +1,4 @@
-# Protokoll
+# Protokolle
 
 Eine minimalistische iOS-App für Besprechungsprotokolle im technischen Dark-Design: Live-Transkription oder Import von Audiodateien, lokale Speicherung und optionale KI-Zusammenfassung.
 
@@ -22,7 +22,7 @@ Eine minimalistische iOS-App für Besprechungsprotokolle im technischen Dark-Des
 4. Mit **⌘R** starten.
 
 **Simulator**: keine Signatur nötig, sofort lauffähig.
-**Gerät**: Target auswählen → `Signing & Capabilities` → `Automatically manage signing` aktivieren → Apple-ID-Team wählen. Falls die Bundle-ID belegt ist, `com.liulian.AsrRecognize` in `com.deinName.AsrRecognize` ändern.
+**Gerät**: Target auswählen → `Signing & Capabilities` → `Automatically manage signing` aktivieren → Apple-ID-Team wählen. Falls die Bundle-ID belegt ist, `com.liulian.Protokolle` in `com.deinName.Protokolle` ändern.
 
 ### Voraussetzungen
 
@@ -76,7 +76,7 @@ Eine minimalistische iOS-App für Besprechungsprotokolle im technischen Dark-Des
 
 ### Spracherkennung / Sprache
 
-Die App verwendet ausschließlich die **System-Spracherkennung** von Apple Speech – live und beim Import. Die Option **Nur auf dem Gerät** hält die Erkennung offline; ohne diese Option kann Apple die Erkennung auf seinen Servern durchführen. Die App bündelt kein lokales ASR-Modell mehr.
+Die App verwendet ausschließlich die **System-Spracherkennung** von Apple Speech – live und beim Import. Die Option **Nur auf dem Gerät** ist standardmäßig aktiv und hält die Erkennung offline; ohne diese Option kann Apple die Erkennung auf seinen Servern durchführen. Die App bündelt kein lokales ASR-Modell mehr.
 
 Die Erkennungssprache lässt sich zwischen **Deutsch** und **English** umschalten; die Änderung gilt für die nächste Aufnahme bzw. den nächsten Import.
 
@@ -252,3 +252,47 @@ Hinweis: Das kostenlose Kontingent umfasst etwa 30 Minuten pro Monat und 3 Minut
 5. Bei „Nicht vertrauenswürdiger Entwickler“: **Einstellungen → Allgemein → VPN & Geräteverwaltung** → der Apple-ID vertrauen.
 
 Mit einer kostenlosen Apple-ID signierte Apps **laufen nach 7 Tagen ab**; danach mit denselben Schritten erneut signieren. Nach der Installation in den Einstellungen die Transkription auf **Nur auf dem Gerät** stellen, um ohne Netzwerk zu erkennen.
+
+---
+
+## Veröffentlichung (App Store)
+
+### 1. Datenschutz- und Support-Seite
+
+`site/` enthält die deutsche und englische Datenschutzerklärung, die Support-Seite und ein Impressum. Der Workflow **Pages** veröffentlicht den Ordner nach jedem Push auf `main`.
+
+1. GitHub → **Settings → Pages → Source: GitHub Actions**.
+2. Nach dem ersten Lauf: `https://helloliulian.github.io/AsrRecognize/`.
+3. **Vorher alle Platzhalter in eckigen Klammern** in `site/privacy/de.html`, `site/privacy/en.html`, `site/support.html` und `fastlane/metadata/copyright.txt` durch echte Angaben ersetzen.
+
+### 2. TestFlight-Upload über GitHub Actions
+
+Workflow **Build AsrRecognize** manuell starten und **upload_to_testflight** aktivieren. Der Job archiviert, signiert mit automatischer Bereitstellung und lädt direkt zu TestFlight hoch. Die Build-Nummer kommt aus `GITHUB_RUN_NUMBER`.
+
+Benötigte Repository-Secrets:
+
+| Secret | Inhalt |
+| --- | --- |
+| `APPLE_TEAM_ID` | Team-ID aus dem Developer Portal |
+| `APP_STORE_CONNECT_KEY_ID` | Key-ID des App Store Connect API Key |
+| `APP_STORE_CONNECT_ISSUER_ID` | Issuer-ID des API Key |
+| `APP_STORE_CONNECT_API_KEY` | Base64 des `.p8`-Schlüssels |
+| `BUILD_CERTIFICATE_BASE64` | Base64 des Distribution-Zertifikats (`.p12`) |
+| `P12_PASSWORD` | Passwort des `.p12` |
+| `KEYCHAIN_PASSWORD` | optional, temporäres Keychain-Passwort |
+
+Fehlt eines der Pflicht-Secrets, wird der Upload-Job mit einer Warnung übersprungen. Alternativ kann **Xcode Cloud** in App Store Connect den Build und Upload ohne lokalen Mac übernehmen.
+
+### 3. Store-Metadaten
+
+`fastlane/metadata/de-DE/` enthält Name, Untertitel, Keywords, Beschreibung, Promo-Text, URLs und Versionshinweise; `fastlane/metadata/review_information/notes.txt` die Notizen für die Prüfung. Die Werte können manuell in App Store Connect übernommen oder auf einem Mac mit `fastlane deliver --skip_binary_upload` hochgeladen werden.
+
+### 4. Noch manuell zu erledigen
+
+- Apple Developer Program abschließen und die Bundle-ID `com.liulian.Protokolle` registrieren.
+- In der EU zusätzlich die **Trader-Erklärung** (DSA) in App Store Connect ausfüllen.
+- App-Privacy-Fragebogen: Audio (Spracherkennung, ggf. über Apple), Nutzerinhalte (Transkript bei Cloud-KI), keine Verknüpfung mit Identität, kein Tracking.
+- Altersfreigabe, Kategorie (Productivity), Copyright und Support-URL eintragen.
+- iPhone-Screenshots in 6,9″ (1320 × 2868) ergänzen; die vorhandenen Bilder sind nur iPad (2064 × 2752).
+- Screenshots mit einer echten Aufnahme statt Mock-Text neu erstellen.
+- TestFlight-Internaltest auf einem echten Gerät durchführen.

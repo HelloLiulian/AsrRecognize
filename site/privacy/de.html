@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Datenschutzerklärung – Protokolle</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 800px; margin: 0 auto; padding: 48px 24px; line-height: 1.65; }
+  h1 { font-size: 1.9rem; }
+  h2 { margin-top: 2rem; font-size: 1.2rem; }
+  .meta { color: #6b7280; font-size: 0.9rem; }
+  .note { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 12px 16px; color: #111827; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  th, td { border: 1px solid #d1d5db; padding: 8px 10px; text-align: left; vertical-align: top; font-size: 0.92rem; }
+  code { font-size: 0.9em; }
+  a { color: #2563eb; }
+</style>
+</head>
+<body>
+<p><a href="../index.html">← Zurück</a> · <a href="en.html">English version</a></p>
+<h1>Datenschutzerklärung</h1>
+<p class="meta">App „Protokolle“ · Stand: 6. November 2026</p>
+
+<h2>1. Verantwortlicher</h2>
+<p>
+  <strong>[Vor- und Nachname]</strong><br>
+  [Straße und Hausnummer]<br>
+  [PLZ Ort], Deutschland<br>
+  E-Mail: <a href="mailto:[kontakt@example.com]">[kontakt@example.com]</a>
+</p>
+
+<h2>2. Kurzfassung</h2>
+<ul>
+  <li>Die App speichert Aufnahmen, Transkripte und Protokolle <strong>lokal auf Ihrem Gerät</strong>.</li>
+  <li>Es gibt <strong>kein Benutzerkonto</strong>, keine Cloud-Synchronisierung, keine Werbung und kein Tracking.</li>
+  <li>Audio wird <strong>nicht</strong> an uns und nicht an KI-Zusammenfassungs-Anbieter übertragen. Die Systemspracherkennung ist standardmäßig auf „Nur auf dem Gerät“ gestellt; unterstützt das Gerät die gewählte Sprache nicht lokal, kann sie auf Apples Server ausweichen (Abschnitt 4).</li>
+  <li>Nur wenn Sie eine Cloud-KI-Zusammenfassung ausdrücklich konfigurieren und starten, wird der <strong>Transkripttext</strong> an den von Ihnen gewählten Anbieter gesendet.</li>
+  <li>Wir betreiben kein Backend; wir erhalten keine Ihrer Inhalte.</li>
+</ul>
+
+<h2>3. Verarbeitete Daten und Zwecke</h2>
+<table>
+  <tr><th>Daten</th><th>Wo</th><th>Zweck</th><th>Rechtsgrundlage</th></tr>
+  <tr><td>Mikrofonaufnahmen und importierte Audiodateien</td><td>nur lokal (App-Sandbox)</td><td>Aufnahme, Wiedergabe, Transkription</td><td>Art. 6 Abs. 1 lit. b DSGVO</td></tr>
+  <tr><td>Transkripte, Zusammenfassungen, Titel</td><td>lokal in der App-Datenbank</td><td>Protokollfunktion, Suche, Export</td><td>Art. 6 Abs. 1 lit. b DSGVO</td></tr>
+  <tr><td>Einstellungen (Sprache, Offline-Modus, KI-Anbieter)</td><td>lokal (UserDefaults)</td><td>Funktion der App</td><td>Art. 6 Abs. 1 lit. b DSGVO</td></tr>
+  <tr><td>API-Schlüssel für Cloud-KI</td><td>lokal im iOS-Schlüsselbund</td><td>Authentifizierung beim gewählten Anbieter</td><td>Art. 6 Abs. 1 lit. b DSGVO</td></tr>
+  <tr><td>Transkripttext bei Cloud-Zusammenfassung</td><td>Übermittlung an den von Ihnen gewählten Anbieter</td><td>Erstellung der Zusammenfassung</td><td>Art. 6 Abs. 1 lit. a DSGVO (Einwilligung durch aktive Auswahl und Start)</td></tr>
+</table>
+<p>Die Bereitstellung der Daten ist für die Nutzung der jeweiligen Funktion erforderlich. Ohne Mikrofonzugriff ist keine Aufnahme möglich; ohne Cloud-Konfiguration steht die Cloud-Zusammenfassung nicht zur Verfügung.</p>
+
+<h2>4. Spracherkennung (Apple Speech)</h2>
+<p>Die App nutzt die Systemspracherkennung von Apple. Ist die Option <strong>„Nur auf dem Gerät“</strong> aktiviert, findet die Erkennung ausschließlich lokal statt. Ohne diese Option kann Apple Audiodaten zur Erkennung auf seinen Servern verarbeiten. Anbieter ist Apple Distribution International Ltd. bzw. Apple Inc., USA. Apple stützt Übermittlungen auf Standardvertragsklauseln und/oder das EU-US Data Privacy Framework. Details: <a href="https://www.apple.com/de/legal/privacy/">apple.com/de/legal/privacy</a>.</p>
+
+<h2>5. KI-Zusammenfassung</h2>
+<ul>
+  <li><strong>Apple Intelligence (auf dem Gerät):</strong> Transkript und Zusammenfassung bleiben vollständig auf dem Gerät. Erfordert iOS 26 und ein unterstütztes Gerät.</li>
+  <li><strong>Mistral AI (EU, Standard-Cloud-Anbieter):</strong> Der Transkripttext wird an die EU-Endpunkte von Mistral AI (Frankreich) übermittelt. Bitte schließen Sie als Verantwortlicher den erforderlichen Auftragsverarbeitungsvertrag mit Mistral ab.</li>
+  <li><strong>DeepSeek (optional, nur außerhalb der EU geeignet):</strong> Die Verarbeitung findet in China statt. Die App zeigt vor der Nutzung einen ausdrücklichen Warnhinweis. Für personenbezogene Daten in der EU ist dieser Anbieter nicht geeignet.</li>
+  <li><strong>Eigener Endpunkt:</strong> Sie können einen beliebigen OpenAI-kompatiblen Endpunkt eintragen. Verantwortlich für Datenschutz und Vertragslage ist dann der von Ihnen gewählte Anbieter.</li>
+</ul>
+<p>In allen Cloud-Fällen wird ausschließlich Text übertragen, kein Audio. Ohne Ihre aktive Konfiguration und das Starten einer Zusammenfassung werden keine Transkripte an Dritte gesendet.</p>
+
+<h2>6. Hosting dieser Website</h2>
+<p>Diese Seite wird über GitHub Pages bereitgestellt (GitHub Inc., USA). Beim Aufruf verarbeitet GitHub technische Zugriffsdaten (z. B. IP-Adresse, Zeitpunkt, User-Agent) in Server-Logs. Rechtsgrundlage ist unser berechtigtes Interesse an einer sicheren Bereitstellung (Art. 6 Abs. 1 lit. f DSGVO). Weitere Informationen: <a href="https://docs.github.com/de/site-policy/privacy-policies/github-privacy-statement">GitHub Privacy Statement</a>.</p>
+
+<h2>7. Speicherdauer</h2>
+<p>Inhalte verbleiben lokal, bis Sie sie in der App löschen oder die App deinstallieren. Wir speichern keine Inhalte auf eigenen Servern. Bei Cloud-Anbietern gelten deren Löschfristen; bitte prüfen Sie die jeweilige Datenschutzerklärung.</p>
+
+<h2>8. Empfänger und Drittlandübermittlung</h2>
+<p>Empfänger sind ausschließlich die von Ihnen gewählten Dienstleister (Apple, Mistral AI, ggf. DeepSeek oder Ihr eigener Endpunkt) sowie GitHub für diese Website. Übermittlungen in die USA stützen sich auf Standardvertragsklauseln und/oder das EU-US Data Privacy Framework; Übermittlungen nach China erfolgen nur nach Ihrer ausdrücklichen Auswahl und mit Warnhinweis.</p>
+
+<h2>9. Ihre Rechte</h2>
+<p>Sie haben nach der DSGVO das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20), Widerspruch (Art. 21) sowie Widerruf einer Einwilligung (Art. 7 Abs. 3) mit Wirkung für die Zukunft. Wenden Sie sich dazu an die oben genannte E-Mail-Adresse. Außerdem können Sie sich bei einer Datenschutz-Aufsichtsbehörde beschweren.</p>
+
+<h2>10. Keine automatisierte Entscheidungsfindung</h2>
+<p>Es findet keine automatisierte Entscheidungsfindung einschließlich Profiling im Sinne von Art. 22 DSGVO statt.</p>
+
+<h2>11. Änderungen</h2>
+<p>Wir passen diese Erklärung an, wenn sich Funktionen oder Rechtslage ändern. Es gilt die jeweils auf dieser Seite veröffentlichte Fassung.</p>
+
+<div class="note"><strong>Hinweis für den Betreiber:</strong> Bitte ersetzen Sie alle Platzhalter in eckigen Klammern durch Ihre echten Angaben, bevor Sie die Seite veröffentlichen.</div>
+</body>
+</html>

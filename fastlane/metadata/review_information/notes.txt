@@ -1,0 +1,32 @@
+Thank you for reviewing Protokolle.
+
+WHAT IT DOES
+Record meetings with live German/English transcription (Apple Speech), optionally import audio files, and generate a structured summary with action items and decisions.
+
+NO ACCOUNT / NO LOGIN
+There is no sign-up, no account, and no backend. All recordings, transcripts and summaries are stored locally.
+
+TESTING THE CORE FLOW
+1. Tap "Aufnahme starten" (start recording).
+2. Allow microphone and speech recognition.
+3. Speak; the transcript appears live.
+4. Tap "Fertig" (done) to save the note.
+5. Open the note to play audio, edit the title, view the transcript, or export.
+
+AI SUMMARY
+- The default provider is Apple Intelligence on the device (requires iOS 26 and a supported device). It needs no API key.
+- If the test device does not support Apple Intelligence, all recording, transcription, import, search and export features remain fully testable; the summary screen simply states that the local model is unavailable and lets you choose a provider.
+- Cloud summaries are optional and use the reviewer's own API key (e.g. Mistral AI EU). No key is bundled and no data is sent without an explicit provider selection.
+- Audio is never uploaded; only transcript text is sent to a cloud provider when the user starts a cloud summary.
+
+PERMISSIONS
+- Microphone: recording.
+- Speech recognition: transcription. "Nur auf dem Gerät" (on-device only) is enabled by default and keeps recognition offline when the device supports the language locally; it can be turned off in Settings.
+- Background audio: keeps an active recording running when the screen locks.
+
+OTHER
+- No tracking, no advertising, no third-party analytics SDKs, no in-app purchases in v1.0.
+- Privacy policy: https://helloliulian.github.io/AsrRecognize/privacy/en.html
+- Support: https://helloliulian.github.io/AsrRecognize/support.html
+
+If you need a limited demo key for the optional cloud summary, contact the support email and we will provide one.

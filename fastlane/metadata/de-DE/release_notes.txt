@@ -1,0 +1,1 @@
+Erste Version: Live-Transkription, Import von Audiodateien, KI-Zusammenfassung auf dem Gerät oder in der EU, Suche und Export.

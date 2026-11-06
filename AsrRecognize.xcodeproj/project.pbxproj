@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		20DDA1EF970C365A16F71374 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9A1734B207983482FFA116E7 /* Assets.xcassets */; };
+		11F259D71EC140DA9ADF40D0 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 4637591BC630033874B4A21F /* PrivacyInfo.xcprivacy */; };
 		85BA9144A663E9490B926EB0 /* AsrRecognizeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36477A1A18A966AD3C9F69C9 /* AsrRecognizeApp.swift */; };
 		5999CA066512D4CD71018935 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D6B89F91E416089F5AD243 /* Components.swift */; };
 		1F6FFD47FEE9A20CEDBD2A53 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1D9EBB3245783E22087BB1 /* Theme.swift */; };
@@ -49,6 +50,7 @@
 /* Begin PBXFileReference section */
 		9A1734B207983482FFA116E7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		703930F2EC36D8AC5ECB0CDB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		4637591BC630033874B4A21F /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		36477A1A18A966AD3C9F69C9 /* AsrRecognizeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsrRecognizeApp.swift; sourceTree = "<group>"; };
 		27D6B89F91E416089F5AD243 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		DA1D9EBB3245783E22087BB1 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
@@ -119,6 +121,7 @@
 			isa = PBXGroup;
 			children = (
 				703930F2EC36D8AC5ECB0CDB /* Info.plist */,
+				4637591BC630033874B4A21F /* PrivacyInfo.xcprivacy */,
 				9A1734B207983482FFA116E7 /* Assets.xcassets */,
 				AD735352E4FE8FE0803C143C /* App */,
 				DE88973CF9D86A57CFCB63F9 /* Design */,
@@ -267,6 +270,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				20DDA1EF970C365A16F71374 /* Assets.xcassets in Resources */,
+				11F259D71EC140DA9ADF40D0 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -392,7 +396,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.liulian.AsrRecognize;
+				PRODUCT_BUNDLE_IDENTIFIER = com.liulian.Protokolle;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -416,7 +420,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.liulian.AsrRecognize;
+				PRODUCT_BUNDLE_IDENTIFIER = com.liulian.Protokolle;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;

@@ -11,7 +11,7 @@ PROJECT_DIR = ROOT / "AsrRecognize.xcodeproj"
 APP_DIR = ROOT / "AsrRecognize"
 
 TARGET_NAME = "AsrRecognize"
-BUNDLE_ID = "com.liulian.AsrRecognize"
+BUNDLE_ID = "com.liulian.Protokolle"
 DEPLOYMENT_TARGET = "18.0"
 
 SAFE_VALUE = re.compile(r"^[A-Za-z0-9_./$+\-]+$")
@@ -56,11 +56,17 @@ def build() -> str:
 
     assets_ref = file_ref(APP_DIR / "Assets.xcassets", "folder.assetcatalog")
     info_ref = file_ref(APP_DIR / "Info.plist", "text.plist.xml")
+    privacy_ref = file_ref(APP_DIR / "PrivacyInfo.xcprivacy", "text.xml")
 
     asset_build = gid("build-assets")
     build_files.append(
         f"\t\t{asset_build} /* Assets.xcassets in Resources */ = {{isa = PBXBuildFile; "
         f"fileRef = {assets_ref} /* Assets.xcassets */; }};\n"
+    )
+    privacy_build = gid("build-privacy")
+    build_files.append(
+        f"\t\t{privacy_build} /* PrivacyInfo.xcprivacy in Resources */ = {{isa = PBXBuildFile; "
+        f"fileRef = {privacy_ref} /* PrivacyInfo.xcprivacy */; }};\n"
     )
 
     subgroup_lines: list[str] = []
@@ -107,6 +113,7 @@ def build() -> str:
 
     app_group_children = [
         f"\t\t\t\t{info_ref} /* Info.plist */,\n",
+        f"\t\t\t\t{privacy_ref} /* PrivacyInfo.xcprivacy */,\n",
         f"\t\t\t\t{assets_ref} /* Assets.xcassets */,\n",
     ]
     for group_name in sorted(groups):
@@ -320,6 +327,7 @@ def build() -> str:
         "\t\t\tbuildActionMask = 2147483647;\n"
         "\t\t\tfiles = (\n"
         f"\t\t\t\t{asset_build} /* Assets.xcassets in Resources */,\n"
+        f"\t\t\t\t{privacy_build} /* PrivacyInfo.xcprivacy in Resources */,\n"
         "\t\t\t);\n"
         "\t\t\trunOnlyForDeploymentPostprocessing = 0;\n"
         "\t\t};\n"

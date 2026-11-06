@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>de</string>
 	<key>CFBundleDisplayName</key>
-	<string>Protokoll</string>
+	<string>Protokolle</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -24,12 +24,14 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Protokoll benötigt Zugriff auf das Mikrofon, um Besprechungen aufzunehmen und zu transkribieren.</string>
+	<string>Protokolle benötigt Zugriff auf das Mikrofon, um Besprechungen aufzunehmen und zu transkribieren.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Protokoll wandelt Ihre Aufnahmen in Text um, um daraus ein Protokoll zu erstellen.</string>
+	<string>Protokolle wandelt Ihre Aufnahmen in Text um, um daraus ein Protokoll zu erstellen.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
